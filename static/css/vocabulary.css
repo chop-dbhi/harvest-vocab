@@ -1,0 +1,15 @@
+.searchIdle {
+    background: #fff url('../img/icons/magnifier.png') no-repeat 5px;
+    padding: 2px 5px 2px 25px;
+    border-radius:10px;
+    border: 1px solid #aaa;
+    -moz-border-radius: 10px;
+
+}
+.searchAjax {
+    background: #fff url('../img/ajax-loader-d16.gif') no-repeat 5px;
+    padding: 2px 5px 2px 25px;
+    border: 1px solid #aaa;
+    -moz-border-radius: 10px;
+    border-radius:10px;
+}

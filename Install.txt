@@ -1,0 +1,11 @@
+The following needs to be added to the DATABASES dictionary in your settings file:
+
+'vocabulary': {
+    'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+    'NAME': PROJ_DIR+'/database.db', # Or path to database file if using sqlite3.
+    'USER': '',                      # Not used with sqlite3.
+    'PASSWORD': '',                  # Not used with sqlite3.
+    'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
+    'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
+}
+

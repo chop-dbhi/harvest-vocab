@@ -1,0 +1,19 @@
+<![CDATA[
+<div class="result">
+<a href="/static/plugins/vb/browse/">Diagnoses</a>
+<% for (var index = 0; index < this.path.length; index+=1) {%>
+&raquo; <a href="#<%=this.path[index].child_ref%>"><%=this.path[index].name%></a>
+<% }  %>
+<% if (this.child_ref) { %>
+&raquo; <a href="#<%=this.child_ref%>"><%=this.name%></a>
+<% } else { %>
+&raquo; <%=this.name%>
+    <% if (this.attributes.icd9) { %>
+| icd9 Code= <%=this.attributes.icd9%>
+    <% } %>
+   <% if (this.attributes.clinibase) { %>
+| Clinbase ID = <%=this.attributes.clinibase%>
+   <% } %>
+<% } %>
+</div>
+]]>

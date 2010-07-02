@@ -1,0 +1,11 @@
+{ 
+  "path"  : [{"name":"Category I", "id":9, "child_ref":"11/12" }],  
+  "nodes" : [ {"name":"Category I", "id":9, "child_ref":"11/12" },
+              {"name":"Category J", "id":10, "child_ref":"11/12" },
+              {"name":"Category K", "id":11, "child_ref":"11/12" },
+              {"name":"Category L", "id":12, "child_ref":"11/12" },
+              {"name":"A Diagnosis", "id":13, "child_ref":"" },
+              {"name":"Category M",  "id":14, "child_ref":"11/12" },
+              {"name":"Category N",  "id":15, "child_ref":"11/12" },
+              {"name":"Another Diagnosis", "id":16, "child_ref":"" }]
+}

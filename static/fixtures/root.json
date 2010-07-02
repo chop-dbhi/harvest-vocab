@@ -1,0 +1,11 @@
+{ 
+  "path"  : [],  
+  "nodes" : [ {"name":"Category A", "id":1, "child_ref":"11/12" },
+              {"name":"Category B", "id":2, "child_ref":"11/12" },
+              {"name":"Category C", "id":3, "child_ref":"11/12" },
+              {"name":"Category D", "id":4, "child_ref":"11/12" },
+              {"name":"Category E", "id":5, "child_ref":"11/12" },
+              {"name":"Category F", "id":6, "child_ref":"11/12" },
+              {"name":"Category G", "id":7, "child_ref":"11/12" },
+              {"name":"Category H", "id":8, "child_ref":"11/12" }  ]
+}

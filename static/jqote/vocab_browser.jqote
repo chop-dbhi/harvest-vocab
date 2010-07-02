@@ -1,0 +1,22 @@
+<![CDATA[
+ <div id="title" class="title">
+    <%= this.browsertype %> Browser
+ </div>
+ <div class="toolbar header tabs">
+    <a id ="showBrowse" class="tab tab-selected" href="#browseTab">Browse Diagnoses</a>
+    <a class="tab" href="#searchTab">Search Diagnoses</a>
+ </div>
+ <div class="content">
+     <div id="browseTab">
+         <div id="nav"></div>
+         <div id="browser"></div>
+     </div>
+     <div id="searchTab" class="hidden">
+         <form method="get" action="/plugins/vb/search">
+             <input type="text" class="search" id="vocab_search" name="term" size="50"/>
+         </form>
+         <div id="results">
+         </div>
+     </div>
+</div>
+]]>

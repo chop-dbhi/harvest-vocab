@@ -1,0 +1,11 @@
+<![CDATA[
+ <ul>
+     <% for (var index = 0; index < this.nodes.length; index+=1) {%>
+        <% if (this.nodes[index].child_ref) { %>
+     <li><a href="<%=#this.nodes[index].child_ref%>"><%=this.nodes[index].name%></a></li>
+        <% } else { %>
+     <li><%=this.nodes[index].name%></li>    
+        <% } %>
+     <% }  %>
+ </ul>
+]]>
