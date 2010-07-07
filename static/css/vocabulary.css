@@ -13,3 +13,12 @@
     -moz-border-radius: 10px;
     border-radius:10px;
 }
+
+li {
+    list-style: none;
+}
+
+#browser {
+    height:27em;
+    overflow-y:auto;
+}

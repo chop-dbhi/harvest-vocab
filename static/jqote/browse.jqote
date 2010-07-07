@@ -2,9 +2,9 @@
  <ul>
      <% for (var index = 0; index < this.nodes.length; index+=1) {%>
         <% if (this.nodes[index].child_ref) { %>
-     <li><a href="<%=#this.nodes[index].child_ref%>"><%=this.nodes[index].name%></a></li>
+     <li><div class="button folder" id="folder<%=this.nodes[index].id%>">add</div><a href="#<%=this.nodes[index].child_ref%>"><%=this.nodes[index].name%></a></li>
         <% } else { %>
-     <li><%=this.nodes[index].name%></li>    
+     <li><div class="button leaf" id="leaf<%=this.nodes[index].id%>">add</div><%=this.nodes[index].name%></li>    
         <% } %>
      <% }  %>
  </ul>

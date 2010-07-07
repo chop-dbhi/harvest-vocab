@@ -3,12 +3,32 @@
 (function(){  // $target refers to the div on screen where the concept will be displayed
     var $target = $(document.createElement("div"));
     
-    var prefix = "/static/plugins/vb";
+    var prefix = "/plugins/vb";
+    
+    var addNode = function(node){
+       var $node = $(node);
+       $target.find("#members").append("<div>"+$node.data("name")+"</div>");
+    };
     
     var reloadBrowser = function(category){
        $.get(prefix+'/browse/'+category.replace("#",""), function(data){
-               $target.find("#browser").empty().append($("#browse-template").jqote({nodes:data.nodes}));
-               $target.find('#nav').empty().html($("#breadcrumbs-template").jqote({path:data.path}));
+               data = $.parseJSON(data);
+               $target.find("#browser").empty().append($("#browse-template").jqote(data));
+               $target.find('.button').button();
+               
+               // Assosciate the buttons with their text..
+               for (var index = 0; index < data.nodes.length; index++) {
+                   if (data.nodes[index].child_ref){
+                       $("#folder"+data.nodes[index].id).data("name",data.nodes[index].name);
+                   }else{
+                       $("#leaf"+data.nodes[index].id).data("name",data.nodes[index].name);
+                   }
+               }
+               // Association complete
+               $target.find('.button').click(function(evt){
+                   addNode(this);
+               });
+               $target.find('#nav').empty().html($("#breadcrumbs-template").jqote(data));
        }, "json", function(settings){
            if (settings.url === (prefix+"/browse/")) {
               return $.parseJSON($.ajax({ type: "GET", url: "/static/fixtures/root.json", async: false, dataType:"json" }).responseText); 
@@ -40,11 +60,13 @@
     reloadBrowser("");
     
     // Hijacking all links that contain an href
-    $target.find('a[href]').live("click", function(){
+    $target.find('a[href]:not(.tab)').live("click", function(){
         reloadBrowser(this.hash);
         $("#showBrowse").trigger("click");
         return false;
     });
+    
+    
     
     // Setup the search 
     $target.find("#vocab_search").autocomplete({

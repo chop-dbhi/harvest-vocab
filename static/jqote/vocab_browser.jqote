@@ -18,5 +18,7 @@
          <div id="results">
          </div>
      </div>
+     <p>Patient has been diagnosed with:</p>
+     <div id="members">None</div>
 </div>
 ]]>

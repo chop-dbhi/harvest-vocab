@@ -1,18 +1,13 @@
 from django.conf.urls.defaults import *
 from django.conf import settings
+from vocabulary.views import children_of_folder, dependencies, search_nodes
 # Uncomment the next two lines to enable the admin:
 # from django.contrib import admin
 # admin.autodiscover()
-urlpatterns = patterns('production.views',
-    url(r'^$', 'vocab_browser', name='vocab-browser-top'),
-    url(r'^search', 'vocabulary.vocab_search', name='vocab-search'),
-    url(r'^autocomplete$', 'vocabulary.vocab_autocomplete', name='vocab-autocomplete'),
-    url(r'^simple/$', 'vocabulary.vocab_browser', name='vocab-browser-top'),
-    url(r'^simple/(?P<category>\d+)/$', 'vocabulary.vocab_browser', name='vocab-browser-cat'),
-    
-    url(r'^browse/$', 'vocabulary.vocab_browser_json', name='ajax-browser-top'),
-    url(r'^browse/(?P<category>\d+)/$', 'vocabulary.vocab_browser_json', name='ajax-browser-cat'),
-    url(r'^json$','vocabulary.vocab_json'),
+urlpatterns = patterns('',
+    url(r'^dependencies', dependencies),
+    url(r'^browse/(?P<folder_id>\d+)?$', children_of_folder),
+    url(r'^search$', search_nodes)
 )
 
 if settings.DEBUG:

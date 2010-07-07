@@ -9,7 +9,7 @@
 <% } else { %>
 &raquo; <%=this.name%>
     <% if (this.attributes.icd9) { %>
-| icd9 Code= <%=this.attributes.icd9%>
+| icd9 code = <%=this.attributes.icd9%>
     <% } %>
    <% if (this.attributes.clinibase) { %>
 | Clinbase ID = <%=this.attributes.clinibase%>
