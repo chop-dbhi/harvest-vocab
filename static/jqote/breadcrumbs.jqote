@@ -8,7 +8,7 @@
     <% if (index === (this.path.length-1)) {%>
 &raquo; <b><%=this.path[index].name%></b> 
     <% } else { %>
-&raquo; <a href="<%=this.path[index].child_ref%>"><%=this.path[index].name%></a>
+&raquo; <a href="#<%=this.path[index].child_ref%>"><%=this.path[index].name%></a>
     <% } %>
 <% }  %>
 ]]>

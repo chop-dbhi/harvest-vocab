@@ -67,7 +67,6 @@
     });
     
     
-    
     // Setup the search 
     $target.find("#vocab_search").autocomplete({
         fixture:"/static/fixtures/search_results.json",
