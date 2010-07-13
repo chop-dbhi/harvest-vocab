@@ -1,11 +1,34 @@
 <![CDATA[
- <ul>
-     <% for (var index = 0; index < this.nodes.length; index+=1) {%>
-        <% if (this.nodes[index].child_ref) { %>
-     <li><div class="button folder" id="folder<%=this.nodes[index].id%>">add</div><a href="#<%=this.nodes[index].child_ref%>"><%=this.nodes[index].name%></a></li>
-        <% } else { %>
-     <li><div class="button leaf" id="leaf<%=this.nodes[index].id%>">add</div><%=this.nodes[index].name%></li>    
-        <% } %>
-     <% }  %>
- </ul>
+<% if (this.child_ref) { %>
+<li class="browser-item" style="float:left;">
+<div class="node_item_left">
+<button class="button-add folder" id="folder<%=this.id%>"/>
+</div>
+<div class="node_item_right">
+<div>
+<%=this.name%>
+</div>
+<button class="button-descend"/>
+</div>
+</li>
+<% } else { %>
+<li class="browser-item" style="float:left;">
+<div class="node_item_left">
+<button class="button-add leaf" id="leaf<%=this.id%>"/>
+</div>
+<div class="node_item_right">
+<div>
+<%=this.name%>
+</div>
+<div id="custom_attr">
+<% if (this.attributes.icd9) { %>
+ICD-9 : <%=this.attributes.icd9%>
+<% } %>
+<% if (this.attributes.clinibase) { %>
+Clinibase ID : <%=this.attributes.clinibase%>
+<% } %>
+</div>
+</div>
+</li>
+<% } %>
 ]]>

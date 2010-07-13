@@ -4,31 +4,93 @@
     var $target = $(document.createElement("div"));
     
     var prefix = "/plugins/vb";
+    var selected = { leaves:[], folders:[]};
     
     var addNode = function(node){
-       var $node = $(node);
-       $target.find("#members").append("<div>"+$node.data("name")+"</div>");
+
+
+       var folder = false;
+       if (node.child_ref){
+           folder = true;
+       }
+       if (folder){
+           if ($.inArray(node.id,selected.folders)!=-1){
+               return;
+           }
+           $target.find("#members").prepend("<li class='selected-item'>"+node.name+"</li>");
+           selected.folders.unshift(node.id);
+       }else{
+            if ($.inArray(node.id, selected.leaves)!=-1){
+                  return;
+            }
+            $target.find("#members").prepend("<li class='selected-item'>"+node.name+"</li>");
+            selected.leaves.unshift(node.id);
+       }
     };
     
     var reloadBrowser = function(category){
        $.get(prefix+'/browse/'+category.replace("#",""), function(data){
                data = $.parseJSON(data);
-               $target.find("#browser").empty().append($("#browse-template").jqote(data));
-               $target.find('.button').button();
-               
-               // Assosciate the buttons with their text..
+               $target.find("#browser_list").empty();
                for (var index = 0; index < data.nodes.length; index++) {
+                   var $li = $($("#browse-template").jqote(data.nodes[index]));
+                   $li.data("node",data.nodes[index]);
+                   
+                   
+                   //Check to see if the item has been selected
                    if (data.nodes[index].child_ref){
-                       $("#folder"+data.nodes[index].id).data("name",data.nodes[index].name);
+                       if ($.inArray(data.nodes[index].id, selected.folders)!=-1){
+                           $li.addClass("added");
+                       }
                    }else{
-                       $("#leaf"+data.nodes[index].id).data("name",data.nodes[index].name);
+                        if ($.inArray(data.nodes[index].id, selected.leaves)!=-1){
+                              $li.addClass("added");
+                        }
                    }
+  
+                   $("#browser_list").append($li);
+                   $li.bind("addItemEvent", function(evt){
+                       addNode($(this).data("node"));
+                       $(this).addClass("added");
+                       return false;
+                   });
+                   $li.bind("descendEvent", function(){
+                       reloadBrowser("#"+$(this).data("node").child_ref);
+                       return false;
+                   });
+                   $li.filter(".folder").click(function(){
+                       $(this).trigger("descendEvent");
+                   });
+                   
+                   $li.filter(".folder").hover(function(){
+                      $(this).addClass("list_on"); 
+                   }, function(){
+                      
+                      $(this).removeClass("list_on");
+                   });
+                          
                }
-               // Association complete
-               $target.find('.button').click(function(evt){
-                   addNode(this);
+               $target.find('.button-add').button({text:false,icons:{primary:'ui-icon-plusthick'}});
+               $target.find('.button-descend').button({text:false,icons:{primary:'ui-icon-arrowthick-1-e'}});
+               $target.find('.button-add').click(function(evt){
+                   $(this).trigger("addItemEvent");
+                   return false;
                });
+               $target.find('.button-descend').click(function(evt){
+                    $(this).trigger("descendEvent");
+                    return false;
+                   
+               });
+               
                $target.find('#nav').empty().html($("#breadcrumbs-template").jqote(data));
+               $target.find('#button-back').button({text:false,icons:{primary:'ui-icon-arrowthick-1-w'}});
+               $target.find('#button-back').click(function(evt){
+                   if (data.path.length == 1) {
+                       reloadBrowser("#");
+                   }else{ 
+                       reloadBrowser("#"+data.path[data.path.length-2].child_ref);
+                   }
+               });
        }, "json", function(settings){
            if (settings.url === (prefix+"/browse/")) {
               return $.parseJSON($.ajax({ type: "GET", url: "/static/fixtures/root.json", async: false, dataType:"json" }).responseText); 
@@ -81,7 +143,54 @@
                       $receiver.append("<div>No matches.</div>");
                       return;
                 }
-                $receiver.append($("#results_template").jqote(value));
+                var $li=$($("#results_template").jqote(value));
+                $li.data("node",value);
+                
+                if (value.child_ref){
+                     if ($.inArray(value.id, selected.folders)!=-1){
+                         $li.addClass("added");
+                     }
+                }else{
+                      if ($.inArray(value.id, selected.leaves)!=-1){
+                            $li.addClass("added");
+                      }
+                }
+                
+                $li.filter(".folder").hover(function(){
+                   $(this).addClass("list_on"); 
+                }, function(){
+                   $(this).removeClass("list_on");
+                });
+                $li.bind("addItemEvent",function(){
+                    addNode($(this).data("node"));
+                    $(this).addClass("added");
+                    return false;
+                });
+                $li.hover(function(){
+                     $(this).addClass("list_on"); 
+                  }, function(){
+                     
+                     $(this).removeClass("list_on");
+                  });
+                $li.click(function(){
+                   var info = $(this).data("node");
+                   if (info.child_ref){
+                       reloadBrowser("#"+info.id);
+                   }else if (info.path){
+                       reloadBrowser("#"+info.path[info.path.length-1].id);
+                   }else{
+                       reloadBrowser("");
+                   }
+                $("#showBrowse").trigger("click");
+                   return false;
+                });
+                
+                $receiver.append($li);
+            });
+            $receiver.find(".button-add").button({text:false,icons:{primary:'ui-icon-plusthick'}});
+            $receiver.find(".button-add").click(function(){
+                $(this).trigger("addItemEvent");
+                return false;
             });
         },
         error: function(){

@@ -1,10 +1,9 @@
 .searchIdle {
     background: #fff url('../img/icons/magnifier.png') no-repeat 5px;
     padding: 2px 5px 2px 25px;
-    border-radius:10px;
     border: 1px solid #aaa;
     -moz-border-radius: 10px;
-
+    border-radius:10px;
 }
 .searchAjax {
     background: #fff url('../img/ajax-loader-d16.gif') no-repeat 5px;
@@ -14,11 +13,113 @@
     border-radius:10px;
 }
 
-li {
+ul.column-section li.browser-item {
     list-style: none;
+    margin: 0px 5px 0px 0px;
+    padding: 0px;
+    width:43em;
 }
 
-#browser {
-    height:27em;
+ul.column-section li.browser-item.folder {
+    background-image:url('/static/img/icons/arrow_right.png');
+    background-repeat:no-repeat;
+    background-position:right;
+}
+
+ul.column-section li.search-item {
+    list-style: none;
+    margin: 0px 5px 0px 0px;
+    padding: 0px;
+    width:43em;
+}
+
+ul.column-section li.selected-item {
+    list-style: none;
+    margin: 0px 5px 0px 0px;
+    padding: 0px;
+    width:43em;
+}
+
+ul#members {
+    width:45em;
+}
+
+#browser, #results, #browser_list{
+    height:19em;
+    width:45em;
     overflow-y:auto;
+    overflow-x:hidden;
+}
+
+.button-add {
+    margin-right:20px;
+    position:absolute;
+    float:left;
+    bottom:20%;
+}
+.button-descend{
+    height:16px;
+    width:10px;
+    float:right;
+}
+
+#button-back {
+    margin-left:1px;
+    margin-right:16px;
+    padding-bottom:0px;
+    margin-bottom:0px;
+}
+
+#selected{
+    height:10em;
+    width:45em;
+    overflow-y:auto;
+    overflow-x:hidden;
+}
+
+#nav{
+    margin-bottom:.5em;
+}
+
+.custom_attr {
+    font-size:12px;
+}
+
+.node_path {
+    font-size:10px;
+    color:grey;
+}
+.node_item_right{
+    float:left;
+    position:relative;
+    width:40em;
+}
+.node_item_left{
+    float:left;
+    position:relative;
+    width:30px;
+    height:30px;
+}
+.floatclear {
+    float:clear;
+}
+
+ul.column-section li.browser-item.list_on {
+    border-style:solid;
+    border-width:1px;
+    border-color:black;
+    cursor:pointer;
+}
+ul.column-section li.search-item.list_on {
+    border-style:solid;
+    border-width:1px;
+    border-color:black;
+    cursor:pointer;
+}
+
+ul.column-section li.browser-item.added{
+    background-color:lightblue;
+}
+ul.column-section li.search-item.added {
+    background-color:lightblue;
 }
