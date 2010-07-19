@@ -2,13 +2,13 @@
 <% if (this.path.length===0) {%>
 <button style="visibility:hidden;" id="button-back" class="button-back"/><b>Diagnoses</b>
 <%} else { %>
-<button id="button-back" class="button-back"/><a href="/plugins/vb/browse/">Diagnoses</a>
+<button id="button-back" class="button-back"/><div class="breadcrumb" catid="">Diagnoses</div>
 <% } %>
 <% for (var index = 0; index < this.path.length; index+=1) {%>
    <% if (index === (this.path.length-1)) {%>
 &raquo; <b><%=this.path[index].name%></b>
    <% } else { %>
-&raquo; <a href="#<%=this.path[index].child_ref%>"><%=this.path[index].name%></a>
+&raquo; <div class="breadcrumb" catid="<%=this.path[index].child_ref%>"><%=this.path[index].name%></div>
    <% } %>
 <% } %>
 ]]>

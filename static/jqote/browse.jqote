@@ -1,26 +1,25 @@
 <![CDATA[
 <% if (this.child_ref) { %>
-<li class="browser-item" style="float:left;">
+<li class="browser-item cf folder" >
 <div class="node_item_left">
-<button class="button-add folder" id="folder<%=this.id%>"/>
+<input type="button" class="button-add"/>
 </div>
 <div class="node_item_right">
-<div>
+<div style="float:left">
 <%=this.name%>
 </div>
-<button class="button-descend"/>
 </div>
 </li>
 <% } else { %>
-<li class="browser-item" style="float:left;">
+<li class="browser-item cf leaf">
 <div class="node_item_left">
-<button class="button-add leaf" id="leaf<%=this.id%>"/>
+<button class="button-add"/>
 </div>
 <div class="node_item_right">
 <div>
 <%=this.name%>
 </div>
-<div id="custom_attr">
+<div class="custom_attr">
 <% if (this.attributes.icd9) { %>
 ICD-9 : <%=this.attributes.icd9%>
 <% } %>
@@ -30,5 +29,6 @@ Clinibase ID : <%=this.attributes.clinibase%>
 </div>
 </div>
 </li>
+<div class="floatclear"></div>
 <% } %>
 ]]>

@@ -6,9 +6,12 @@
     var prefix = "/plugins/vb";
     var selected = { leaves:[], folders:[]};
     
+    // This function will use the "selected" object to create
+    // the tree structure that the Avocado state framework expects
+    
+   
+    
     var addNode = function(node){
-
-
        var folder = false;
        if (node.child_ref){
            folder = true;
@@ -70,19 +73,30 @@
                    });
                           
                }
-               $target.find('.button-add').button({text:false,icons:{primary:'ui-icon-plusthick'}});
-               $target.find('.button-descend').button({text:false,icons:{primary:'ui-icon-arrowthick-1-e'}});
                $target.find('.button-add').click(function(evt){
                    $(this).trigger("addItemEvent");
+                   $(this).attr("disabled", "disabled");
                    return false;
                });
+               
                $target.find('.button-descend').click(function(evt){
                     $(this).trigger("descendEvent");
                     return false;
-                   
                });
                
                $target.find('#nav').empty().html($("#breadcrumbs-template").jqote(data));
+               $target.find('#nav div.breadcrumb').bind("click", function(){
+                   reloadBrowser("#"+$(this).attr("catid"));
+                   return false;
+               });
+               $target.find('#nav div.breadcrumb').hover(function(){
+                   $(this).addClass("hovercrumbs");
+                   
+               }, function(){
+                   $(this).removeClass("hovercrumbs");
+               });
+               
+               
                $target.find('#button-back').button({text:false,icons:{primary:'ui-icon-arrowthick-1-w'}});
                $target.find('#button-back').click(function(evt){
                    if (data.path.length == 1) {
@@ -145,6 +159,17 @@
                 }
                 var $li=$($("#results_template").jqote(value));
                 $li.data("node",value);
+                $li.find(".path_node").hover(function(){$(this).addClass("over");},
+                                             function(){$(this).removeClass("over");});
+                $li.find(".path_node").each(function(index,element){
+    
+                   $(element).click(function(evt){
+                       reloadBrowser("#" + value.path[parseInt($(evt.target).attr("pathid"))].id);
+                       $("#showBrowse").trigger("click");
+                       return false;
+                   });
+                    
+                });
                 
                 if (value.child_ref){
                      if ($.inArray(value.id, selected.folders)!=-1){
@@ -187,7 +212,7 @@
                 
                 $receiver.append($li);
             });
-            $receiver.find(".button-add").button({text:false,icons:{primary:'ui-icon-plusthick'}});
+            //$receiver.find(".button-add").button({text:false,icons:{primary:'ui-icon-plusthick'}});
             $receiver.find(".button-add").click(function(){
                 $(this).trigger("addItemEvent");
                 return false;
@@ -198,5 +223,25 @@
         }
     }, 'Search criteria...').helptext('Search criteria...');
     
+    $target.find("#add-to-query").click(function(){
+          console.log("HERE");
+          var tree =  [{
+                        'type': 'logic',
+                        'operator': 'or',
+                        'children': [{
+                            'type': 'field',
+                            'id': 1,
+                            'operator': 'in',
+                            'value': selected.leaves
+                        }, {
+                            'type': 'field',
+                            'id': 2,
+                            'operator': 'in',
+                            'value': selected.folders
+                        }]
+                      }];
+           $target.trigger("queryEvent", tree);
+           console.log(tree);
+       });
     $("body").trigger("widgetLoadedEvent", $target);
 })();
