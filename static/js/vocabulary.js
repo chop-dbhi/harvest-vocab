@@ -6,29 +6,81 @@
     var prefix = "/plugins/vb";
     var selected = { leaves:[], folders:[]};
     
-    // This function will use the "selected" object to create
-    // the tree structure that the Avocado state framework expects
+    // Make sure the currently displayed nodes are correctly colored
+       // as to whether they are selected for the query.
+    var refreshBrowser = function(){
+        $target.find("#browser_list li").removeClass("added");
+        $target.find("#browser_list li input").attr("disabled","");
+        
+        $target.find("#results li").removeClass("added");
+        $target.find("#results li input").attr("disabled","");
+        
+        
+        $target.find("#browser_list li").add("#results li").each(function(index, element){
+           element = $(element);
+           if (element.data('node').child_ref){
+               if ($.inArray(element.data('node').id, selected.folders) !=-1){
+                   element.addClass("added");
+                   element.find("input").attr("disabled","disabled");
+               }
+    
+           } else{
+               if ($.inArray(element.data('node').id,selected.leaves) !=-1){
+                    element.addClass("added");
+                    element.find("input").attr("disabled","disabled");
+               }
+           }
+        });
+    };
+    
+    // Remove a previously selected node..
+    var removeNode = function($node){
+        var index;
+        if ($node.data("node").child_ref){
+            index = $.inArray($node.data("node").id,selected.folders);
+            selected.folders.splice(index,1);
+        }else{
+            index = $.inArray($node.data("node").id,selected.leaves);
+            selected.leaves.splice(index,1);
+        }
+        $node.remove();
+        refreshBrowser();
+    };
     
    
     
+    // This function will use the "selected" object to create
+    // the tree structure that the Avocado state framework expects
     var addNode = function(node){
        var folder = false;
        if (node.child_ref){
            folder = true;
        }
+       var $new_node = $('<li class="selected-item"><input type="button" value="-" class="button-remove"/>'+node.name+'</li>');
+       $new_node.find("input").click(function(){
+          $(this).trigger("removeItemEvent"); 
+       });
+       
+       $new_node.data('node',node);
+       $new_node.bind("removeItemEvent", function(){
+            removeNode($(this));
+            return false;
+       });
+       
        if (folder){
            if ($.inArray(node.id,selected.folders)!=-1){
                return;
            }
-           $target.find("#members").prepend("<li class='selected-item'>"+node.name+"</li>");
+           $target.find("#members").prepend($new_node);
            selected.folders.unshift(node.id);
        }else{
             if ($.inArray(node.id, selected.leaves)!=-1){
                   return;
             }
-            $target.find("#members").prepend("<li class='selected-item'>"+node.name+"</li>");
+            $target.find("#members").prepend($new_node);
             selected.leaves.unshift(node.id);
        }
+       
     };
     
     var reloadBrowser = function(category){
@@ -40,7 +92,7 @@
                    $li.data("node",data.nodes[index]);
                    
                    
-                   //Check to see if the item has been selected
+                   // Check to see if the item has been selected
                    if (data.nodes[index].child_ref){
                        if ($.inArray(data.nodes[index].id, selected.folders)!=-1){
                            $li.addClass("added");
@@ -126,21 +178,23 @@
     // the core code only adds the appropriate classes to selected
     // and non-selected tabs, represented by <a> elements.
     $target.find('.tabs').tabs(false, function (evt, $tab){
+        refreshBrowser();
         var $siblings = $tab.siblings('.tab');
         $($tab.attr('hash')).show();
         $siblings.each(function(index, neighbor){
             $($(neighbor).attr('hash')).hide();
         });
     });
+    
     // Setup the browser
     reloadBrowser("");
     
     // Hijacking all links that contain an href
-    $target.find('a[href]:not(.tab)').live("click", function(){
-        reloadBrowser(this.hash);
-        $("#showBrowse").trigger("click");
-        return false;
-    });
+    // $target.find('a[href]:not(.tab)').live("click", function(){
+    //     reloadBrowser(this.hash);
+    //     $("#showBrowse").trigger("click");
+    //     return false;
+    // });
     
     
     // Setup the search 
@@ -177,7 +231,7 @@
                      }
                 }else{
                       if ($.inArray(value.id, selected.leaves)!=-1){
-                            $li.addClass("added");
+                        $li.addClass("added");
                       }
                 }
                 
@@ -212,9 +266,11 @@
                 
                 $receiver.append($li);
             });
-            //$receiver.find(".button-add").button({text:false,icons:{primary:'ui-icon-plusthick'}});
+            
+            
             $receiver.find(".button-add").click(function(){
                 $(this).trigger("addItemEvent");
+                $(this).attr("disabled", "disabled");
                 return false;
             });
         },
@@ -224,7 +280,6 @@
     }, 'Search criteria...').helptext('Search criteria...');
     
     $target.find("#add-to-query").click(function(){
-          console.log("HERE");
           var tree =  [{
                         'type': 'logic',
                         'operator': 'or',
