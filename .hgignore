@@ -1,0 +1,8 @@
+syntax: glob
+*.pyc
+.DS_Store
+local.py
+local_settings.py
+
+syntax: regexp
+^docs/_build
