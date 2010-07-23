@@ -5,17 +5,11 @@ kwargs = {
     'version': '.4',
     'author': 'Jeff Miller',
     'author_email': 'millerjm1@email.chop.edu',
-    'description': 'A vocabulary browser for django for tree structured data. Includes database back-end and front-end for AudGenDB framework.',
+    'description': 'A vocabulary browser for django that displays tree structured data. Includes database back-end and front-end for AudGenDB framework.',
     'license': 'BSD',
     'keywords': 'AudGenDB avocado django vocabulary browser',
     'install_requires': ['django>=1.2','django-avocado>=1.0'],
-    'package_data': {
-    
-    },
     'packages': find_packages(exclude=('*.tests', '*.tests.*')),
-    'package_data': {
-        'avocado': ['sql/*.sql']
-    },
     'exclude_package_data': {
         '': ['fixtures/*']
     },
