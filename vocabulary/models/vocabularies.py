@@ -1,6 +1,5 @@
 from django.db import models
-from production.models.datasource import DataSourceRef
-from core.models import (DiagnosisCategoryAbstract, DiagnosisAbstract, DiagnosisIndexAbstract)
+from production.models import DataSourceRef
 
 
 class Diagnosis(DiagnosisAbstract, DataSourceRef):
