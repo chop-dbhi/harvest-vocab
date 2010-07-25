@@ -10,6 +10,7 @@ kwargs = {
     'keywords': 'AudGenDB avocado django vocabulary browser',
     'install_requires': ['django>=1.2','django-avocado>=1.0'],
     'packages': find_packages(exclude=('*.tests', '*.tests.*')),
+    'package_datea' : {'static':'*'},
     'exclude_package_data': {
         '': ['fixtures/*']
     },
