@@ -90,9 +90,6 @@
     ].join('');
     
     var vocabBrowserTemplate = [
-    '<div id="title" class="title">',
-    '    <%= this.browsertype %> Browser',
-    ' </div>',
     ' <div class="toolbar header tabs">',
     '    <a id ="showBrowse" class="tab tab-selected" href="#browseTab">Browse Diagnoses</a>',
     '    <a class="tab" href="#searchTab">Search Diagnoses</a>',
