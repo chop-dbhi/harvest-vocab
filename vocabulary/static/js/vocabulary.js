@@ -2,12 +2,124 @@
 // The first thing to be displayed is always the root category
 (function(){  // $target refers to the div on screen where the concept will be displayed
     var $target = $(document.createElement("div"));
-    
     var prefix = "/plugins/vb";
     var selected = { leaves:[], folders:[]};
     
+    var breadcrumbsTemplate = [ 
+    '<% if (this.path.length===0) {%>',
+    '<input type="button" style="visibility:hidden;" id="button-back" class="button-back" value="Back"/><b>Diagnoses</b>',
+    '<%} else { %>',
+    '<input type="button" id="button-back" class="button-back" value="Back"/><div class="breadcrumb" catid="">Diagnoses</div>',
+    '<% } %>',
+    '<% for (var index = 0; index < this.path.length; index+=1) {%>',
+    '   <% if (index === (this.path.length-1)) {%>',
+    '&raquo; <b><%=this.path[index].name%></b>',
+    '   <% } else { %>',
+    '&raquo; <div class="breadcrumb" catid="<%=this.path[index].child_ref%>"><%=this.path[index].name%></div>',
+    '   <% } %>',
+    '<% } %>'].join("");
+    
+    var browseTemplate = [
+    '<% if (this.child_ref) { %>',
+    '<li class="browser-item cf folder" >',
+    '<div class="node_item_left">',
+    '<input type="button" class="button-add" value = "+"/>',
+    '</div>',
+    '<div class="node_item_right">',
+    '<div style="float:left">',
+    '<%=this.name%>',
+    '</div>',
+    '</div>',
+    '</li>',
+    '<% } else { %>',
+    '<li class="browser-item cf leaf">',
+    '<div class="node_item_left">',
+    '<input type="button" class="button-add" value = "+"/>',
+    '</div>',
+    '<div class="node_item_right">',
+    '<div>',
+    '<%=this.name%>',
+    '</div>',
+    '<div class="custom_attr">',
+    '<% if (this.attributes.icd9) { %>',
+    'ICD-9 : <%=this.attributes.icd9%>',
+    '<% } %>',
+    '<% if (this.attributes.clinibase) { %>',
+    'Clinibase ID : <%=this.attributes.clinibase%>',
+    '<% } %>',
+    '</div>',
+    '</div>',
+    '</li>',
+    '<div class="floatclear"></div>',
+    '<% } %>'].join('');
+    
+    var searchResultsTemplate = [
+    '<li class="search-item" style="float:left;">',
+    '<div class="node_item_left">',
+    '<% if (this.child_ref) {%>',
+    '<input type="button" value="+" class="button-add folder" id="folder<%=this.id%>"/>',
+    '<% } else {%>',
+    '<input type="button" value="+" class="button-add leaf" id="leaf<%=this.id%>"/>',
+    '<%}%>',
+    '</div>',
+    '<div class="node_item_right">',
+    '<div>',
+    '<% if (this.child_ref) { %>',
+    '<%=this.name%>',
+    '<% } else { %>',
+    '<%=this.name%>',
+    '<% } %>',
+    '</div>',
+    '<div class="custom_attr">',
+    '<% if (this.attributes.icd9) { %>',
+    'ICD-9 : <%=this.attributes.icd9%>',
+    '<% } %>',
+    '<% if (this.attributes.clinibase) { %>',
+    'Clinibase ID : <%=this.attributes.clinibase%>',
+    '<% } %>',
+    '</div>',
+    '<div class="node_path">',
+    '<% for (index = 0; index < this.path.length; index++){ %>',
+    '<div pathid="<%=index%>" class="path_node" style="display:inline;"><%=this.path[index].name%></div>',
+    '<% if (index != this.path.length -1){%> &raquo <%}%>',
+    '<% } %>',
+    '</div>',
+    '</div>',
+    '</li>',
+    '<div class="floatclear"></div>',
+    ].join('');
+    
+    var vocabBrowserTemplate = [
+    '<div id="title" class="title">',
+    '    <%= this.browsertype %> Browser',
+    ' </div>',
+    ' <div class="toolbar header tabs">',
+    '    <a id ="showBrowse" class="tab tab-selected" href="#browseTab">Browse Diagnoses</a>',
+    '    <a class="tab" href="#searchTab">Search Diagnoses</a>',
+    ' </div>',
+    ' <div class="content">',
+    '     <div id="browseTab">',
+    '         <div id="nav"></div>',
+    '         <ul id="browser_list" class="browser-section cf" ></ul>',
+    '     </div>',
+    '     <div id="searchTab" class="hidden">',
+    '         <form method="get" action="/plugins/vb/search">',
+    '             <input type="text" class="searchIdle" id="vocab_search" name="term" size="50"/>',
+    '         </form>',
+    '         <div>',
+    '         <ul id="results" class="browser-section">',
+    '         </ul>',
+    '         </div>',
+    '     </div>',
+    '     <hr />',
+    '     <p>Patient has been diagnosed with:</p>',
+    '     <div id="selected"><ul class="browser-section" id="members"></ul></div>',
+    '     <input type="button" id="add-to-query" value="Add to Query"/>',
+    '</div>'
+    ].join('');
+    
     // Make sure the currently displayed nodes are correctly colored
-       // as to whether they are selected for the query.
+    // as to whether they are selected for the query.
     var refreshBrowser = function(){
         $target.find("#browser_list li").removeClass("added");
         $target.find("#browser_list li input").attr("disabled","");
@@ -88,7 +200,7 @@
                data = $.parseJSON(data);
                $target.find("#browser_list").empty();
                for (var index = 0; index < data.nodes.length; index++) {
-                   var $li = $($("#browse-template").jqote(data.nodes[index]));
+                   var $li = $($.jqote(browseTemplate,data.nodes[index]));
                    $li.data("node",data.nodes[index]);
                    
                    
@@ -136,7 +248,7 @@
                     return false;
                });
                
-               $target.find('#nav').empty().html($("#breadcrumbs-template").jqote(data));
+               $target.find('#nav').empty().html($.jqote(breadcrumbsTemplate,data));
                $target.find('#nav div.breadcrumb').bind("click", function(){
                    reloadBrowser("#"+$(this).attr("catid"));
                    return false;
@@ -168,7 +280,7 @@
     
     // We need to inject our templates into the application, at this point we are assuming that our jqote templates
     // are being delivered by the django template system
-    $target.append($("#vocabulary_browser").jqote({browsertype:"Diagnoses"}));
+    $target.append($.jqote(vocabBrowserTemplate,{browsertype:"Diagnoses"}));
     $target.addClass("container cf");
     
     var $receiver = $target.find("#results");
@@ -211,7 +323,7 @@
                       $receiver.append("<div>No matches.</div>");
                       return;
                 }
-                var $li=$($("#results_template").jqote(value));
+                var $li=$($.jqote(searchResultsTemplate,value));
                 $li.data("node",value);
                 $li.find(".path_node").hover(function(){$(this).addClass("over");},
                                              function(){$(this).removeClass("over");});
