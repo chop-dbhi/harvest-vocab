@@ -21,12 +21,12 @@
     
     var browseTemplate = [
     '<% if (this.child_ref) { %>',
-    '<li class="browser-item cf folder" >',
+    '<li class="browser-item cf folder">',
     '<div class="node_item_left">',
     '<input type="button" class="button-add" value = "+"/>',
     '</div>',
     '<div class="node_item_right">',
-    '<div>',
+    '<div style="float:left">',
     '<%=this.name%>',
     '</div>',
     '</div>',
