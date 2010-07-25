@@ -21,7 +21,7 @@ ul.browser-section li.browser-item {
 }
 
 ul.browser-section li.browser-item.folder {
-    background-image:url('/static/img/icons/play_9x12.png');
+    background-image:url('../img/icons/play_9x12.png');
     background-repeat:no-repeat;
     background-position:right;
 }
