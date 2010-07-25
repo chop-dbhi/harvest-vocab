@@ -1,8 +1,8 @@
 <![CDATA[
 <% if (this.path.length===0) {%>
-<button style="visibility:hidden;" id="button-back" class="button-back"/><b>Diagnoses</b>
+<input type="button" style="visibility:hidden;" id="button-back" class="button-back" value="Back"/><b>Diagnoses</b>
 <%} else { %>
-<button id="button-back" class="button-back"/><div class="breadcrumb" catid="">Diagnoses</div>
+<input type="button" id="button-back" class="button-back" value="Back"/><div class="breadcrumb" catid="">Diagnoses</div>
 <% } %>
 <% for (var index = 0; index < this.path.length; index+=1) {%>
    <% if (index === (this.path.length-1)) {%>

@@ -2,7 +2,7 @@
 <% if (this.child_ref) { %>
 <li class="browser-item cf folder" >
 <div class="node_item_left">
-<input type="button" class="button-add"/>
+<input type="button" class="button-add" value = "+"/>
 </div>
 <div class="node_item_right">
 <div style="float:left">
@@ -13,7 +13,7 @@
 <% } else { %>
 <li class="browser-item cf leaf">
 <div class="node_item_left">
-<button class="button-add"/>
+<input type="button" class="button-add" value = "+"/>
 </div>
 <div class="node_item_right">
 <div>

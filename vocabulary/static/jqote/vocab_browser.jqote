@@ -9,23 +9,20 @@
  <div class="content">
      <div id="browseTab">
          <div id="nav"></div>
-         <div id="browser">
-          <ul id="browser_list" class="column-section cf">
-          
-          </ul>
-         </div>
+         <ul id="browser_list" class="browser-section cf" ></ul>
      </div>
      <div id="searchTab" class="hidden">
          <form method="get" action="/plugins/vb/search">
              <input type="text" class="searchIdle" id="vocab_search" name="term" size="50"/>
          </form>
          <div>
-         <ul id="results" class="column-section">
+         <ul id="results" class="browser-section">
          </ul>
          </div>
      </div>
      <hr />
      <p>Patient has been diagnosed with:</p>
-     <div id="selected"><ul class="column-section" id="members"></ul></div>
+     <div id="selected"><ul class="browser-section" id="members"></ul></div>
+     <input type="button" id="add-to-query" value="Add to Query"/>
 </div>
 ]]>

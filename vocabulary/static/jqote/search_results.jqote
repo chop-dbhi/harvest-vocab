@@ -2,15 +2,15 @@
 <li class="search-item" style="float:left;">
 <div class="node_item_left">
 <% if (this.child_ref) {%>
-<button class="button-add folder" id="folder<%=this.id%>"/>
+<input type="button" value="+" class="button-add folder" id="folder<%=this.id%>"/>
 <% } else {%>
-<button class="button-add leaf" id="leaf<%=this.id%>"/>
+<input type="button" value="+" class="button-add leaf" id="leaf<%=this.id%>"/>
 <%}%>
 </div>
 <div class="node_item_right">
 <div>
 <% if (this.child_ref) { %>
-<a href="#<%=this.child_ref%>"><%=this.name%></a>
+<%=this.name%>
 <% } else { %>
 <%=this.name%>
 <% } %>
@@ -25,7 +25,7 @@ Clinibase ID : <%=this.attributes.clinibase%>
 </div>
 <div class="node_path">
 <% for (index = 0; index < this.path.length; index++){ %>
-<%=this.path[index].name%>
+<div pathid="<%=index%>" class="path_node" style="display:inline;"><%=this.path[index].name%></div>
 <% if (index != this.path.length -1){%> &raquo <%}%>
 <% } %>
 </div>
