@@ -404,8 +404,7 @@
                             'value': selected.folders
                         }]
                       }];
-           $target.trigger("queryEvent", tree);
-           console.log(tree);
+           $target.trigger("UpdateQueryEvent", tree);
        });
     $("#option-detail").trigger("ViewReadyEvent", $target);
 })();
