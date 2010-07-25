@@ -410,5 +410,5 @@
            $target.trigger("queryEvent", tree);
            console.log(tree);
        });
-    $("body").trigger("widgetLoadedEvent", $target);
+    $("#option-detail").trigger("ViewReadyEvent", $target);
 })();

@@ -2,8 +2,6 @@ from django.db import models
 from production.models import DataSourceRef
 
 
-
-
 class VocabularyIndexAbstract(models.Model):
     """This is a generic flattened index for vocabs. It may replace the main
     model eventually"""
@@ -21,8 +19,6 @@ class VocabularyCategoryAbstract(models.Model):
     name  = models.TextField(max_length=255)
     level = models.IntegerField()
 
-    
-    
     def path_to_root(self):
         """Returns a list of the parent categories to help with navigation"""
         parents = []
