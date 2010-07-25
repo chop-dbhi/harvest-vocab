@@ -21,18 +21,19 @@ class VocabularyCategoryAbstract(models.Model):
     name  = models.TextField(max_length=255)
     level = models.IntegerField()
 
-
+    
+    
     def path_to_root(self):
         """Returns a list of the parent categories to help with navigation"""
-        #parents = []
-        #parent_category = self
-        #while parent_category.parentCategory != None:
-        #    parents.append(parent_category.parentCategory)
-        #    parent_category = parent_category.parentCategory
+        parents = []
+        parent_category = self
+        while parent_category.parentCategory != None:
+            parents.append(parent_category.parentCategory)
+            parent_category = parent_category.parentCategory
         #Reorder so the lowest index is the highest (lest-specific) category
-        #parents.reverse()
-        #return parents
-
+        parents.reverse()
+        return parents
+        
     def __unicode__(self):
         return u'%s' % self.name
 
