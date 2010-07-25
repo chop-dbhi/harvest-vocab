@@ -31,6 +31,7 @@
     '</div>',
     '</div>',
     '</li>',
+    '<div class="floatclear"></div>',
     '<% } else { %>',
     '<li class="browser-item cf leaf">',
     '<div class="node_item_left">',
