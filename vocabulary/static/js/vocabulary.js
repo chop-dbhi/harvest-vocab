@@ -256,9 +256,7 @@
                }, function(){
                    $(this).removeClass("hovercrumbs");
                });
-               
-               
-               $target.find('#button-back').button({text:false,icons:{primary:'ui-icon-arrowthick-1-w'}});
+
                $target.find('#button-back').click(function(evt){
                    if (data.path.length == 1) {
                        reloadBrowser("#");
