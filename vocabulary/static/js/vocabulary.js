@@ -94,7 +94,7 @@
     '    <a id ="showBrowse" class="tab tab-selected" href="#browseTab">Browse Diagnoses</a>',
     '    <a class="tab" href="#searchTab">Search Diagnoses</a>',
     ' </div>',
-    ' <div>',
+    ' <div class="content">',
     '     <div id="browseTab">',
     '         <div id="nav"></div>',
     '         <ul id="browser_list" class="browser-section cf" ></ul>',
