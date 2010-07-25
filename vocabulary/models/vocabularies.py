@@ -2,36 +2,7 @@ from django.db import models
 from production.models import DataSourceRef
 
 
-class Diagnosis(DiagnosisAbstract, DataSourceRef):
-    #category = models.ForeignKey('DiagnosisCategory')
-    categories = models.ManyToManyField('DiagnosisCategory', 
-                through='DiagnosisIndex')
 
-    class Meta:
-        app_label = u'production'
-        verbose_name = u'Diagnosis'
-        verbose_name_plural = u'Diagnoses'
-
-class DiagnosisCategory(DiagnosisCategoryAbstract):
-    parentCategory = models.ForeignKey('self', null=True)
-    diagnoses = models.ManyToManyField(Diagnosis, through='DiagnosisIndex')
-    
-
-    class Meta:
-        app_label = u'production'
-        verbose_name = u'Diagnosis Category'
-        verbose_name_plural = u'Diagnosis Categories'
-
-class DiagnosisIndex(DiagnosisIndexAbstract):
-    
-    diagnosis = models.ForeignKey(Diagnosis)
-    category = models.ForeignKey(DiagnosisCategory)
-    
-    class Meta:
-        app_label = u'production'
-        verbose_name = u'Diagnosis Index'
-        verbose_name_plural = u'Diagnosis Index'
-        
 
 class VocabularyIndexAbstract(models.Model):
     """This is a generic flattened index for vocabs. It may replace the main
@@ -100,3 +71,34 @@ class DiagnosisAbstract(VocabularyItemAbstract):
 
     class Meta:
         abstract = True
+
+class Diagnosis(DiagnosisAbstract, DataSourceRef):
+    #category = models.ForeignKey('DiagnosisCategory')
+    categories = models.ManyToManyField('DiagnosisCategory', 
+                through='DiagnosisIndex')
+
+    class Meta:
+        app_label = u'production'
+        verbose_name = u'Diagnosis'
+        verbose_name_plural = u'Diagnoses'
+
+class DiagnosisCategory(DiagnosisCategoryAbstract):
+    parentCategory = models.ForeignKey('self', null=True)
+    diagnoses = models.ManyToManyField(Diagnosis, through='DiagnosisIndex')
+    
+
+    class Meta:
+        app_label = u'production'
+        verbose_name = u'Diagnosis Category'
+        verbose_name_plural = u'Diagnosis Categories'
+
+class DiagnosisIndex(DiagnosisIndexAbstract):
+    
+    diagnosis = models.ForeignKey(Diagnosis)
+    category = models.ForeignKey(DiagnosisCategory)
+    
+    class Meta:
+        app_label = u'production'
+        verbose_name = u'Diagnosis Index'
+        verbose_name_plural = u'Diagnosis Index'
+
