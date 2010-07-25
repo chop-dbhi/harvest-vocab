@@ -26,7 +26,7 @@
     '<input type="button" class="button-add" value = "+"/>',
     '</div>',
     '<div class="node_item_right">',
-    '<div style="float:left">',
+    '<div">',
     '<%=this.name%>',
     '</div>',
     '</div>',
@@ -54,7 +54,7 @@
     '<% } %>'].join('');
     
     var searchResultsTemplate = [
-    '<li class="search-item" style="float:left;">',
+    '<li class="search-item">',
     '<div class="node_item_left">',
     '<% if (this.child_ref) {%>',
     '<input type="button" value="+" class="button-add folder" id="folder<%=this.id%>"/>',

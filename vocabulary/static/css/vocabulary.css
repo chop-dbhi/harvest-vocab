@@ -154,3 +154,8 @@ ul.browser-section li.search-item.added {
 .hidden{
     display:none;
 }
+
+.search-item{
+    float:left;
+}
+}
