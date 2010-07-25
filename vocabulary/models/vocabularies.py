@@ -2,6 +2,40 @@ from django.db import models
 from production.models import DataSourceRef
 
 
+
+
+class DataSource(models.Model):
+    """Defines a data source model which holds meta data regarding the origins
+    of the data for a particular row. This will allow for backward referencing
+    to the data source in case anamolies occur.
+
+    The format of the field is as follows:
+        '<table_name>.<field_name>' e.g. 'clarity_patient.pat_id'
+
+    IDs must be stored as chars because some ids prefix with alpha characters.
+    Multiple field/ids pairs are available for storing composite primary keys.
+    """
+    resource = models.ForeignKey(Resource)
+    field_1 = models.CharField(max_length=100)
+    id_1 = models.CharField(max_length=100)
+    field_2= models.CharField(max_length=100)
+    id_2= models.CharField(max_length=100)
+    field_3 = models.CharField(max_length=100)
+    id_3 = models.CharField(max_length=100)
+
+    class Meta:
+        app_label = u'core'
+
+    def __unicode__(self):
+        return u'%s.%s.%s ...' % (self.resource, self.field_1, self.id_1)
+
+class DataSourceRef(models.Model):
+    datasource = models.ForeignKey(DataSource, null=True)
+
+    class Meta:
+        abstract = True
+        app_label = u'production'
+
 class VocabularyIndexAbstract(models.Model):
     """This is a generic flattened index for vocabs. It may replace the main
     model eventually"""
