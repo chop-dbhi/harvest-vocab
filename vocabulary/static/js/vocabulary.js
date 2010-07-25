@@ -287,22 +287,14 @@
     $target.find('.tabs').tabs(false, function (evt, $tab){
         refreshBrowser();
         var $siblings = $tab.siblings('.tab');
-        $($tab.attr('hash')).show();
+        $target.find($tab.attr('hash')).show();
         $siblings.each(function(index, neighbor){
-            $($(neighbor).attr('hash')).hide();
+            $target.find($(neighbor).attr('hash')).hide();
         });
     });
     
     // Setup the browser
     reloadBrowser("");
-    
-    // Hijacking all links that contain an href
-    // $target.find('a[href]:not(.tab)').live("click", function(){
-    //     reloadBrowser(this.hash);
-    //     $("#showBrowse").trigger("click");
-    //     return false;
-    // });
-    
     
     // Setup the search 
     $target.find("#vocab_search").autocomplete({
