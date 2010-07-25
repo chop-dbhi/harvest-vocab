@@ -151,3 +151,6 @@ ul.browser-section li.search-item.added {
 #add-to-query{
     
 }
+.hidden{
+    display:none;
+}
