@@ -2,7 +2,27 @@ from django.db import models
 from production.models import DataSourceRef
 
 
+class Institution(models.Model):
+    "Represents a single institution that is contributing data."
+    name = models.CharField(max_length=200)
 
+    class Meta:
+        app_label = u'core'
+
+    def __unicode__(self):
+        return u'%s' % self.name
+
+class Resource(models.Model):
+    "Represents a source of data bound to an Institution. e.g. Epic, Access DB"
+    institution = models.ForeignKey(Institution)
+    name = models.CharField(max_length=200)
+    description = models.TextField(null=True, blank=True)
+
+    class Meta:
+        app_label = u'core'
+
+    def __unicode__(self):
+        return u'%s @ %s' % (self.name, self.institution)
 
 class DataSource(models.Model):
     """Defines a data source model which holds meta data regarding the origins
