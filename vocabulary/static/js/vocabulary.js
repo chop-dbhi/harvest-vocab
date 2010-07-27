@@ -21,7 +21,7 @@
     
     var browseTemplate = [
     '<% if (this.child_ref) { %>',
-    '<li class="browser-item cf folder">',
+    '<li class="browser-item clearfix folder">',
     '<div class="node_item_left">',
     '<input type="button" class="button-add" value = "+"/>',
     '</div>',
@@ -32,7 +32,7 @@
     '</div>',
     '</li>',
     '<% } else { %>',
-    '<li class="browser-item cf leaf">',
+    '<li class="browser-item clearfix leaf">',
     '<div class="node_item_left">',
     '<input type="button" class="button-add" value = "+"/>',
     '</div>',
