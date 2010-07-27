@@ -31,7 +31,6 @@
     '</div>',
     '</div>',
     '</li>',
-    '<div class="floatclear"></div>',
     '<% } else { %>',
     '<li class="browser-item cf leaf">',
     '<div class="node_item_left">',
@@ -51,7 +50,6 @@
     '</div>',
     '</div>',
     '</li>',
-    '<div class="floatclear"></div>',
     '<% } %>'].join('');
     
     var searchResultsTemplate = [
