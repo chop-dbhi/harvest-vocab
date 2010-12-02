@@ -1,9 +1,6 @@
-// Initiate the main screen of the vocabulary browser
-// The first thing to be displayed is always the root category
-(function(){  // $target refers to the div on screen where the concept will be displayed
+require.def("vocabulary",  function(){  // $target refers to the div on screen where the concept will be displayed
     var $target = $(document.createElement("div"));
     var prefix = "/plugins/vb";
-    var selected = { leaves:[], folders:[]};
     
     var breadcrumbsTemplate = [ 
     '<% if (this.path.length===0) {%>',
@@ -21,7 +18,7 @@
     
     var browseTemplate = [
     '<% if (this.child_ref) { %>',
-    '<li class="browser-item clearfix folder">',
+    '<li class="browser-item cf folder">',
     '<div class="node_item_left">',
     '<input type="button" class="button-add" value = "+"/>',
     '</div>',
@@ -32,7 +29,7 @@
     '</div>',
     '</li>',
     '<% } else { %>',
-    '<li class="browser-item clearfix leaf">',
+    '<li class="browser-item cf leaf">',
     '<div class="node_item_left">',
     '<input type="button" class="button-add" value = "+"/>',
     '</div>',
@@ -110,7 +107,6 @@
     '     <hr />',
     '     <p>Patient has been diagnosed with:</p>',
     '     <div id="selected"><ul class="browser-section" id="members"></ul></div>',
-    '     <input type="button" id="add-to-query" value="Add to Query"/>',
     '</div>'
     ].join('');
     
@@ -127,13 +123,13 @@
         $target.find("#browser_list li").add("#results li").each(function(index, element){
            element = $(element);
            if (element.data('node').child_ref){
-               if ($.inArray(element.data('node').id, selected.folders) !=-1){
+               if ($.inArray(element.data('node').id, ds[folder]) !=-1){
                    element.addClass("added");
                    element.find("input").attr("disabled","disabled");
                }
     
            } else{
-               if ($.inArray(element.data('node').id,selected.leaves) !=-1){
+               if ($.inArray(element.data('node').id, ds[leaf]) !=-1){
                     element.addClass("added");
                     element.find("input").attr("disabled","disabled");
                }
@@ -145,24 +141,26 @@
     var removeNode = function($node){
         var index;
         if ($node.data("node").child_ref){
-            index = $.inArray($node.data("node").id,selected.folders);
-            selected.folders.splice(index,1);
+            index = $.inArray($node.data("node").id,ds[folder]);
+            ds[folder].splice(index,1);
+            $target.trigger("ElementChangedEvent", [{name:folder, value:ds[folder]}]);
         }else{
-            index = $.inArray($node.data("node").id,selected.leaves);
-            selected.leaves.splice(index,1);
+            index = $.inArray($node.data("node").id,ds[leaf]);
+            ds[leaf].splice(index,1);
+            $target.trigger("ElementChangedEvent", [{name:leaf, value:ds[leaf]}]);
         }
         $node.remove();
         refreshBrowser();
     };
-    
-   
-    
+
+
+
     // This function will use the "selected" object to create
     // the tree structure that the Avocado state framework expects
     var addNode = function(node){
-       var folder = false;
+       var isFolder = false;
        if (node.child_ref){
-           folder = true;
+           isFolder = true;
        }
        var $new_node = $('<li class="selected-item"><input type="button" value="-" class="button-remove"/>'+node.name+'</li>');
        $new_node.find("input").click(function(){
@@ -175,18 +173,20 @@
             return false;
        });
        
-       if (folder){
-           if ($.inArray(node.id,selected.folders)!=-1){
+       if (isFolder){
+           if ($.inArray(node.id,ds[folder])!=-1){
                return;
            }
            $target.find("#members").prepend($new_node);
-           selected.folders.unshift(node.id);
+           ds[folder].unshift(node.id);
+           $target.trigger("ElementChangedEvent", [{name:folder, value:ds[folder]}]);
        }else{
-            if ($.inArray(node.id, selected.leaves)!=-1){
+            if ($.inArray(node.id, ds[leaf])!=-1){
                   return;
             }
             $target.find("#members").prepend($new_node);
-            selected.leaves.unshift(node.id);
+            ds[leaf].unshift(node.id);
+            $target.trigger("ElementChangedEvent", [{name:leaf, value:ds[leaf]}]);
        }
        
     };
@@ -199,18 +199,16 @@
                    var $li = $($.jqote(browseTemplate,data.nodes[index]));
                    $li.data("node",data.nodes[index]);
                    
-                   
                    // Check to see if the item has been selected
                    if (data.nodes[index].child_ref){
-                       if ($.inArray(data.nodes[index].id, selected.folders)!=-1){
+                       if ($.inArray(data.nodes[index].id, ds[folder])!=-1){
                            $li.addClass("added");
                        }
                    }else{
-                        if ($.inArray(data.nodes[index].id, selected.leaves)!=-1){
+                        if ($.inArray(data.nodes[index].id, ds[leaf])!=-1){
                               $li.addClass("added");
                         }
                    }
-  
                    $("#browser_list").append($li);
                    $li.bind("addItemEvent", function(evt){
                        addNode($(this).data("node"));
@@ -231,7 +229,6 @@
                       
                       $(this).removeClass("list_on");
                    });
-                          
                }
                $target.find('.button-add').click(function(evt){
                    $(this).trigger("addItemEvent");
@@ -272,128 +269,157 @@
        }); 
     };
     
-    // We need to inject our templates into the application, at this point we are assuming that our jqote templates
-    // are being delivered by the django template system
-    $target.append($.jqote(vocabBrowserTemplate,{browsertype:"Diagnoses"}));
-    $target.addClass("container cf");
-    
-    var $receiver = $target.find("#results");
-    var $input = $target.find("#vocab_search");
-    
-    // enable tabs, we use a very barebones tabs implementation
-    // the core code only adds the appropriate classes to selected
-    // and non-selected tabs, represented by <a> elements.
-    $target.find('.tabs').tabs(false, function (evt, $tab){
-        refreshBrowser();
-        var $siblings = $tab.siblings('.tab');
-        $target.find($tab.attr('hash')).show();
-        $siblings.each(function(index, neighbor){
-            $target.find($(neighbor).attr('hash')).hide();
+    var ds = {};
+    var that = {};
+    var leaf;
+    var folder;
+    var execute = function($content_div, concept_id, data){
+        
+        leaf = concept_id+"_"+data.leaf;
+        folder = concept_id+"_"+data.folder;
+        ds[leaf] = [];
+        ds[folder] = [];
+        // We need to inject our templates into the application, at this point we are assuming that our jqote templates
+        // are being delivered by the django template system
+        $target.append($.jqote(vocabBrowserTemplate,{browsertype:"Diagnoses"}));
+        $target.addClass("container cf");
+        
+        var $receiver = $target.find("#results");
+        var $input = $target.find("#vocab_search");
+        
+        // enable tabs, we use a very barebones tabs implementation
+        // the core code only adds the appropriate classes to selected
+        // and non-selected tabs, represented by <a> elements.
+        $target.find('.tabs').tabs(false, function (evt, $tab){
+            refreshBrowser();
+            var $siblings = $tab.siblings('.tab');
+            $target.find($tab.attr('hash')).show();
+            $siblings.each(function(index, neighbor){
+                $target.find($(neighbor).attr('hash')).hide();
+            });
         });
-    });
-    
-    // Setup the browser
-    reloadBrowser("");
-    
-    // Setup the search 
-    $target.find("#vocab_search").autocomplete({
-        fixture:"/static/fixtures/search_results.json",
-        start: function() {
-            $input.removeClass("searchIdle").addClass("searchAjax");
-        },
-        success: function(query, resp) {
-            $input.removeClass("searchAjax").addClass("searchIdle");
-            $receiver.empty();
-            $.each(resp, function(index, value){
-                if (value.id === -1) {
-                      $receiver.append("<div>No matches.</div>");
-                      return;
-                }
-                var $li=$($.jqote(searchResultsTemplate,value));
-                $li.data("node",value);
-                $li.find(".path_node").hover(function(){$(this).addClass("over");},
-                                             function(){$(this).removeClass("over");});
-                $li.find(".path_node").each(function(index,element){
-    
-                   $(element).click(function(evt){
-                       reloadBrowser("#" + value.path[parseInt($(evt.target).attr("pathid"))].id);
-                       $("#showBrowse").trigger("click");
-                       return false;
-                   });
+        
+        // Setup the browser
+        reloadBrowser("");
+        
+        // Setup the search 
+        $target.find("#vocab_search").autocomplete2({
+            fixture:"/static/fixtures/search_results.json",
+            start: function() {
+                $input.removeClass("searchIdle").addClass("searchAjax");
+            },
+            success: function(query, resp) {
+                $input.removeClass("searchAjax").addClass("searchIdle");
+                $receiver.empty();
+                resp = $.parseJSON(resp);
+                $.each(resp, function(index, value){
+                    if (value.id === -1) {
+                          $receiver.append("<div>No matches.</div>");
+                          return;
+                    }
+                    var $li=$($.jqote(searchResultsTemplate,value));
+                    $li.data("node",value);
+                    $li.find(".path_node").hover(function(){$(this).addClass("over");},
+                                                 function(){$(this).removeClass("over");});
+                    $li.find(".path_node").each(function(index,element){
+
+                       $(element).click(function(evt){
+                           reloadBrowser("#" + value.path[parseInt($(evt.target).attr("pathid"))].id);
+                           $("#showBrowse").trigger("click");
+                           return false;
+                       });
+                        
+                    });
                     
+                    if (value.child_ref){
+                         if ($.inArray(value.id, ds[folder])!=-1){
+                             $li.addClass("added");
+                         }
+                    }else{
+                          if ($.inArray(value.id,ds[leaf])!=-1){
+                            $li.addClass("added");
+                          }
+                    }
+                    
+                    $li.filter(".folder").hover(function(){
+                       $(this).addClass("list_on"); 
+                    }, function(){
+                       $(this).removeClass("list_on");
+                    });
+                    $li.bind("addItemEvent",function(){
+                        addNode($(this).data("node"));
+                        $(this).addClass("added");
+                        return false;
+                    });
+                    $li.hover(function(){
+                         $(this).addClass("list_on"); 
+                      }, function(){
+                         
+                         $(this).removeClass("list_on");
+                      });
+                    $li.click(function(){
+                       var info = $(this).data("node");
+                       if (info.child_ref){
+                           reloadBrowser("#"+info.id);
+                       }else if (info.path){
+                           reloadBrowser("#"+info.path[info.path.length-1].id);
+                       }else{
+                           reloadBrowser("");
+                       }
+                    $("#showBrowse").trigger("click");
+                       return false;
+                    });
+                    
+                    $receiver.append($li);
                 });
                 
-                if (value.child_ref){
-                     if ($.inArray(value.id, selected.folders)!=-1){
-                         $li.addClass("added");
-                     }
-                }else{
-                      if ($.inArray(value.id, selected.leaves)!=-1){
-                        $li.addClass("added");
-                      }
-                }
                 
-                $li.filter(".folder").hover(function(){
-                   $(this).addClass("list_on"); 
-                }, function(){
-                   $(this).removeClass("list_on");
-                });
-                $li.bind("addItemEvent",function(){
-                    addNode($(this).data("node"));
-                    $(this).addClass("added");
+                $receiver.find(".button-add").click(function(){
+                    $(this).trigger("addItemEvent");
+                    $(this).attr("disabled", "disabled");
                     return false;
                 });
-                $li.hover(function(){
-                     $(this).addClass("list_on"); 
-                  }, function(){
-                     
-                     $(this).removeClass("list_on");
-                  });
-                $li.click(function(){
-                   var info = $(this).data("node");
-                   if (info.child_ref){
-                       reloadBrowser("#"+info.id);
-                   }else if (info.path){
-                       reloadBrowser("#"+info.path[info.path.length-1].id);
-                   }else{
-                       reloadBrowser("");
-                   }
-                $("#showBrowse").trigger("click");
-                   return false;
-                });
-                
-                $receiver.append($li);
-            });
-            
-            
-            $receiver.find(".button-add").click(function(){
-                $(this).trigger("addItemEvent");
-                $(this).attr("disabled", "disabled");
-                return false;
-            });
-        },
-        error: function(){
-            $input.removeClass("searchAjax").addClass("searchIdle");
-        }
-    }, 'Search criteria...').helptext('Search criteria...');
-    
-    $target.find("#add-to-query").click(function(){
-          var tree =  [{
-                        'type': 'logic',
-                        'operator': 'or',
-                        'children': [{
-                            'type': 'field',
-                            'id': 1,
-                            'operator': 'in',
-                            'value': selected.leaves
-                        }, {
-                            'type': 'field',
-                            'id': 2,
-                            'operator': 'in',
-                            'value': selected.folders
-                        }]
-                      }];
-           $target.trigger("UpdateQueryEvent", tree);
+            },
+            error: function(){
+                $input.removeClass("searchAjax").addClass("searchIdle");
+            }
+        }, 'Search criteria...');//helptext('Search criteria...');
+        
+        // $target.find("#add-to-query").click(function(){
+        //              $target.trigger("UpdateQueryEvent", ds);
+        //              var tree =  [{
+        //                            'type': 'logic',
+        //                            'operator': 'or',
+        //                            'children': [{
+        //                                'type': 'field',
+        //                                'fid': data.leaf,
+        //                                'cid': concept_id,
+        //                                'operator': 'in',
+        //                                'value': selected.leaves
+        //                            }, {
+        //                                'type': 'field',
+        //                                'fid': data.leaf,
+        //                                'cid': concept_id,
+        //                                'operator': 'in',
+        //                                'value': selected.folders
+        //                            }]
+        //                          }];
+        //               
+        //           });
+           
+        $target.bind("UpdateDSEvent", function(evt,new_ds){
+            if (!$.isEmptyObject(new_ds)){
+                ds = new_ds;
+                reloadBrowser();
+            } 
+        });
+        
+       $target.bind("UpdateQueryButtonClicked", function(event){
+              $target.trigger("ConstructQueryEvent");
        });
-    $("#option-detail").trigger("ViewReadyEvent", $target);
-})();
+       
+        $content_div.trigger("ViewReadyEvent", [$target]);
+ };
+ that.execute = execute;
+ return that;
+});

@@ -1,3 +1,11 @@
+.cf:after {
+    content: ".";
+    display: block;
+    height: 0;
+    clear: both;
+    visibility: hidden;
+}
+
 .searchIdle {
     background: #fff url('../img/icons/magnifier.png') no-repeat 5px;
     padding: 2px 5px 2px 25px;
@@ -100,6 +108,7 @@ ul#members {
     width:4em;
     height:25px;
 }
+
 .floatclear {
     float:clear;
 }
@@ -148,14 +157,11 @@ ul.browser-section li.search-item.added {
     list-style:none;
     padding:0px;
 }
-#add-to-query{
-    
-}
+
 .hidden{
     display:none;
 }
 
 .search-item{
     float:left;
-}
 }

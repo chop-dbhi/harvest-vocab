@@ -14,9 +14,9 @@ if settings.DEBUG:
     _media_url = settings.MEDIA_URL
     if _media_url.startswith('/'):
         _media_url = _media_url[1:]
-        urlpatterns += patterns('',
-            url(r'^%s(?P<path>.*)$' % _media_url, 'django.views.static.serve', {
-                'document_root': settings.MEDIA_ROOT,
-            }),
-        )
+    urlpatterns += patterns('',
+        url(r'^%s(?P<path>.*)$' % _media_url, 'django.views.static.serve', {
+            'document_root': settings.MEDIA_ROOT,
+        }),
+    )
     del _media_url
