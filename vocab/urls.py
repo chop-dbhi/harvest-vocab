@@ -1,6 +1,6 @@
 from django.conf.urls.defaults import *
 from django.conf import settings
-from django_vocab.views import children_of_folder, dependencies, search_nodes
+from vocab.views import children_of_folder, dependencies, search_nodes
 # Uncomment the next two lines to enable the admin:
 # from django.contrib import admin
 # admin.autodiscover()
