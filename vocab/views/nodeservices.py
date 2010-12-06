@@ -1,6 +1,6 @@
 from django.shortcuts import render_to_response
 from django.template.loader import render_to_string
-from django_vocab.models import (Diagnosis, DiagnosisCategory)
+from vocab.models import (Diagnosis, DiagnosisCategory)
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.db.models import Q
 import json
