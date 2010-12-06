@@ -279,6 +279,7 @@ require.def(function(){  // $target refers to the div on screen where the concep
         folder = concept_id+"_"+data.folder;
         ds[leaf] = [];
         ds[folder] = [];
+        
         // We need to inject our templates into the application, at this point we are assuming that our jqote templates
         // are being delivered by the django template system
         $target.append($.jqote(vocabBrowserTemplate,{browsertype:"Diagnoses"}));
@@ -396,7 +397,7 @@ require.def(function(){  // $target refers to the div on screen where the concep
               $target.trigger("ConstructQueryEvent");
        });
        
-        $content_div.trigger("ViewReadyEvent", [$target]);
+       $content_div.trigger("ViewReadyEvent", [$target]);
  };
  that.execute = execute;
  return that;
