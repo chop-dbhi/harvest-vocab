@@ -1,6 +1,6 @@
-require.def("vocabulary",  function(){  // $target refers to the div on screen where the concept will be displayed
+require.def(function(){  // $target refers to the div on screen where the concept will be displayed
     var $target = $(document.createElement("div"));
-    var prefix = "/plugins/vb";
+    var prefix = "/vocab";
     
     var breadcrumbsTemplate = [ 
     '<% if (this.path.length===0) {%>',
@@ -95,7 +95,7 @@ require.def("vocabulary",  function(){  // $target refers to the div on screen w
     '         <div id="nav"></div>',
     '         <ul id="browser_list" class="browser-section cf"></ul>',
     '     </div>',
-    '     <div id="searchTab" class="hidden">',
+    '     <div id="searchTab">',
     '         <form method="get" action="/plugins/vb/search">',
     '             <input type="text" class="searchIdle" id="vocab_search" name="term" size="50"/>',
     '         </form>',
@@ -385,28 +385,6 @@ require.def("vocabulary",  function(){  // $target refers to the div on screen w
             }
         }, 'Search criteria...');//helptext('Search criteria...');
         
-        // $target.find("#add-to-query").click(function(){
-        //              $target.trigger("UpdateQueryEvent", ds);
-        //              var tree =  [{
-        //                            'type': 'logic',
-        //                            'operator': 'or',
-        //                            'children': [{
-        //                                'type': 'field',
-        //                                'fid': data.leaf,
-        //                                'cid': concept_id,
-        //                                'operator': 'in',
-        //                                'value': selected.leaves
-        //                            }, {
-        //                                'type': 'field',
-        //                                'fid': data.leaf,
-        //                                'cid': concept_id,
-        //                                'operator': 'in',
-        //                                'value': selected.folders
-        //                            }]
-        //                          }];
-        //               
-        //           });
-           
         $target.bind("UpdateDSEvent", function(evt,new_ds){
             if (!$.isEmptyObject(new_ds)){
                 ds = new_ds;

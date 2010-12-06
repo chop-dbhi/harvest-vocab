@@ -1,6 +1,6 @@
 from django.shortcuts import render_to_response
 from django.template.loader import render_to_string
-from vocabulary.models import (Diagnosis, DiagnosisCategory)
+from django_vocab.models import (Diagnosis, DiagnosisCategory)
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.db.models import Q
 import json
@@ -8,12 +8,12 @@ import json
 
 def children_of_folder(request, folder_id=None):
     if folder_id:
-        folder = DiagnosisCategory.objects.using("vocabulary").get(id=folder_id)
+        folder = DiagnosisCategory.objects.get(id=folder_id)
         folders = folder.diagnosiscategory_set.all()
         leaves = folder.diagnoses.filter(diagnosisindex__level=1)
     else:
         folder = None
-        folders = DiagnosisCategory.objects.using("vocabulary").filter(level=1)
+        folders = DiagnosisCategory.objects.filter(level=1)
         leaves = []
     
     json_object = {}
@@ -41,8 +41,8 @@ def search_nodes(request):
     if not search_string:
         return HttpResponse(json.dumps([]), mimetype="application/json")
     
-    folders = DiagnosisCategory.objects.using("vocabulary").filter(name__icontains=search_string)
-    leaves = Diagnosis.objects.using("vocabulary").filter(name__icontains=search_string)
+    folders = DiagnosisCategory.objects.filter(name__icontains=search_string)
+    leaves = Diagnosis.objects.filter(name__icontains=search_string)
     
     folders = [  {
                     "path":[{"name":item.name, "id":item.id, "child_ref":item.id } for item in node.path_to_root()],
