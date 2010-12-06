@@ -25,7 +25,7 @@ ul.browser-section li.browser-item {
     list-style: none;
     margin: 0px 5px 0px 0px;
     padding: 0px;
-    width:43em;
+    width:100%;
 }
 
 ul.browser-section li.browser-item.folder {
@@ -38,14 +38,14 @@ ul.browser-section li.search-item {
     list-style: none;
     margin: 0px 5px 0px 0px;
     padding: 0px;
-    width:43em;
+    width:100%;
 }
 
 ul.browser-section li.selected-item {
     list-style: none;
     margin: 0px 5px 0px 0px;
     padding: 0px;
-    width:43em;
+    width:auto;
     background-color:#ccdddd;
 }
 
@@ -55,7 +55,7 @@ ul#members {
 
 #browser, #results, #browser_list{
     height:19em;
-    width:45em;
+    width:auto;
     overflow-y:auto;
     overflow-x:hidden;
 }
@@ -80,7 +80,7 @@ ul#members {
 
 #selected{
     height:10em;
-    width:45em;
+    width:auto;
     overflow-y:auto;
     overflow-x:hidden;
 }
@@ -100,7 +100,7 @@ ul#members {
 .node_item_right{
     float:left;
     position:relative;
-    width:38em;
+    width:auto;
 }
 .node_item_left{
     float:left;

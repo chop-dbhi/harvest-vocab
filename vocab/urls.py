@@ -7,7 +7,7 @@ from vocab.views import children_of_folder, dependencies, search_nodes
 urlpatterns = patterns('',
     url(r'^dependencies', dependencies),
     url(r'^browse/(?P<folder_id>\d+)?$', children_of_folder),
-    url(r'^search$', search_nodes)
+    url(r'^search', search_nodes)
 )
 
 if settings.DEBUG:

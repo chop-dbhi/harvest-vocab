@@ -87,7 +87,7 @@ require.def(function(){  // $target refers to the div on screen where the concep
     
     var vocabBrowserTemplate = [
     ' <div class="toolbar header tabs">',
-    '    <a id ="showBrowse" class="tab tab-selected" href="#browseTab">Browse Diagnoses</a>',
+    '    <a id ="showBrowse" class="tab" href="#browseTab">Browse Diagnoses</a>',
     '    <a class="tab" href="#searchTab">Search Diagnoses</a>',
     ' </div>',
     ' <div class="content">',
@@ -96,7 +96,7 @@ require.def(function(){  // $target refers to the div on screen where the concep
     '         <ul id="browser_list" class="browser-section cf"></ul>',
     '     </div>',
     '     <div id="searchTab">',
-    '         <form method="get" action="/plugins/vb/search">',
+    '         <form method="get" action="/vocab/search/">',
     '             <input type="text" class="searchIdle" id="vocab_search" name="term" size="50"/>',
     '         </form>',
     '         <div>',
@@ -274,7 +274,6 @@ require.def(function(){  // $target refers to the div on screen where the concep
     var leaf;
     var folder;
     var execute = function($content_div, concept_id, data){
-        
         leaf = concept_id+"_"+data.leaf;
         folder = concept_id+"_"+data.folder;
         ds[leaf] = [];
@@ -312,7 +311,6 @@ require.def(function(){  // $target refers to the div on screen where the concep
             success: function(query, resp) {
                 $input.removeClass("searchAjax").addClass("searchIdle");
                 $receiver.empty();
-                resp = $.parseJSON(resp);
                 $.each(resp, function(index, value){
                     if (value.id === -1) {
                           $receiver.append("<div>No matches.</div>");
