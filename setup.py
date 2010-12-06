@@ -9,7 +9,7 @@ kwargs = {
     'license': 'BSD',
     'keywords': 'AudGenDB avocado django vocabulary browser',
     'packages': find_packages(exclude=('*.tests', '*.tests.*')),
-    'package_data':{'vocabulary':['static/js/*.js','static/css/*.css','static/img/*.*','static/img/icons/*.*']},
+    'package_data':{'vocab':['static/js/*.js','static/css/*.css','static/img/*.*','static/img/icons/*.*']},
     'exclude_package_data': {
         '': ['fixtures/*']
     },
