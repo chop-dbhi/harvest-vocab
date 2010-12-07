@@ -6,6 +6,12 @@
     visibility: hidden;
 }
 
+.browser-section::-webkit-scrollbar {
+    width: 1ex;
+    background: rgba(0, 0, 0, 0.2);
+    -webkit-border-radius: 1ex;
+}
+
 .searchIdle {
     background: #fff url('../img/icons/magnifier.png') no-repeat 5px;
     padding: 2px 5px 2px 21px;
@@ -69,13 +75,6 @@ ul#members {
     height:16px;
     width:10px;
     float:right;
-}
-
-#button-back {
-    margin-left:1px;
-    margin-right:16px;
-    padding-bottom:0px;
-    margin-bottom:0px;
 }
 
 #selected{
@@ -153,15 +152,15 @@ ul.browser-section li.search-item.added {
     margin:0px;
 }
 .browser-section {
-    margin:0px;
     list-style:none;
-    padding:0px;
+    margin:0px 5px 0px 0px;
+    padding-right:5px;
 }
 
 .hidden{
     display:none;
 }
 
-.search-item{
+.search-item {
     float:left;
 }

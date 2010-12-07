@@ -1,23 +1,17 @@
 require.def(["/static/plugins/vb/js/frontdesk.js"], function(FrontDesk){  // $target refers to the div on screen where the concept will be displayed
-    console.log(FrontDesk);
     var $target = $(document.createElement("div"));
     var prefix = "/vocab";
     
-    var breadcrumbsTemplate = [ 
-    '<% if (this.path.length === 0) {%>',
-    '<input type="button" style="visibility:hidden;" id="button-back" class="button-back" value="Back"/><b>Diagnoses</b>',
-    '<%} else { %>',
-    '<input type="button" id="button-back" class="button-back" value="Back"/><div class="breadcrumb" catid="">Diagnoses</div>',
-    '<% } %>',
-    '<% for (var index = 0; index < this.path.length; index+=1) {%>',
+    var breadcrumbsTemplate = $.jqotec([ 
+    '<% for (var index = 0; index < this.path.length; index++) {%>',
     '   <% if (index === (this.path.length-1)) {%>',
     '&raquo; <b><%=this.path[index].name%></b>',
     '   <% } else { %>',
-    '&raquo; <div class="breadcrumb" catid="<%=this.path[index].child_ref%>"><%=this.path[index].name%></div>',
+    '&raquo; <div class="breadcrumb" data-catid="<%=this.path[index].child_ref%>"><%=this.path[index].name%></div>',
     '   <% } %>',
-    '<% } %>'].join("");
+    '<% } %>'].join(""));
     
-    var browseTemplate = [
+    var browseTemplate = $.jqotec([
     '<% if (this.child_ref) { %>',
     '<li class="browser-item cf folder">',
     '<div class="node_item_left">',
@@ -48,9 +42,9 @@ require.def(["/static/plugins/vb/js/frontdesk.js"], function(FrontDesk){  // $ta
     '</div>',
     '</div>',
     '</li>',
-    '<% } %>'].join('');
+    '<% } %>'].join(''));
     
-    var searchResultsTemplate = [
+    var searchResultsTemplate = $.jqotec([
     '<li class="search-item">',
     '<div class="node_item_left">',
     '<% if (this.child_ref) {%>',
@@ -84,9 +78,9 @@ require.def(["/static/plugins/vb/js/frontdesk.js"], function(FrontDesk){  // $ta
     '</div>',
     '</li>',
     '<div class="floatclear"></div>',
-    ].join('');
+    ].join(''));
     
-    var vocabBrowserTemplate = [
+    var vocabBrowserTemplate = $.jqotec([
     ' <div class="toolbar header tabs">',
     '    <a id ="showBrowse" class="tab" href="#browseTab">Browse Diagnoses</a>',
     '    <a class="tab" href="#searchTab">Search Diagnoses</a>',
@@ -98,7 +92,7 @@ require.def(["/static/plugins/vb/js/frontdesk.js"], function(FrontDesk){  // $ta
     '     </div>',
     '     <div id="searchTab">',
     '         <form method="get" action="/vocab/search/">',
-    '             <input type="text" class="searchIdle" id="vocab_search" name="term" size="50"/>',
+    '             <input type="text" class="autocomplete" id="vocab_search" name="q" size="50" placeholder="Search terms..">',
     '         </form>',
     '         <div>',
     '         <ul id="results" class="browser-section">',
@@ -109,7 +103,7 @@ require.def(["/static/plugins/vb/js/frontdesk.js"], function(FrontDesk){  // $ta
     '     <p>Patient has been diagnosed with:</p>',
     '     <div id="selected"><ul class="browser-section" id="members"></ul></div>',
     '</div>'
-    ].join('');
+    ].join(''));
     
     // Make sure the currently displayed nodes are correctly colored
     // as to whether they are selected for the query.
@@ -144,11 +138,11 @@ require.def(["/static/plugins/vb/js/frontdesk.js"], function(FrontDesk){  // $ta
         if ($node.data("node").child_ref){
             index = $.inArray($node.data("node").id,ds[folder]);
             ds[folder].splice(index,1);
-            $target.trigger("ElementChangedEvent", [{name:folder, value:ds[folder].length>0?ds[folder]:undefined}]);
+            $target.trigger("ElementChangedEvent", [{name:folder, value:ds[folder].length > 0 ?ds[folder]:undefined}]);
         }else{
             index = $.inArray($node.data("node").id,ds[leaf]);
             ds[leaf].splice(index,1);
-            $target.trigger("ElementChangedEvent", [{name:leaf, value:ds[leaf].length>0?ds[leaf]:undefined}]);
+            $target.trigger("ElementChangedEvent", [{name:leaf, value:ds[leaf].length > 0 ? ds[leaf]:undefined}]);
         }
         $node.remove();
         refreshBrowser();
@@ -239,7 +233,7 @@ require.def(["/static/plugins/vb/js/frontdesk.js"], function(FrontDesk){  // $ta
                
                $target.find('#nav').empty().html($.jqote(breadcrumbsTemplate,data));
                $target.find('#nav div.breadcrumb').bind("click", function(){
-                   reloadBrowser("#"+$(this).attr("catid"));
+                   reloadBrowser("#"+$(this).data("catid"));
                    return false;
                });
                $target.find('#nav div.breadcrumb').hover(function(){
@@ -263,14 +257,13 @@ require.def(["/static/plugins/vb/js/frontdesk.js"], function(FrontDesk){  // $ta
     var that = {};
     var leaf;
     var folder;
+    
     var execute = function($content_div, concept_id, data){
         leaf = concept_id+"_"+data.leaf;
         folder = concept_id+"_"+data.folder;
         ds[leaf] = [];
         ds[folder] = [];
         
-        // We need to inject our templates into the application, at this point we are assuming that our jqote templates
-        // are being delivered by the django template system
         $target.append($.jqote(vocabBrowserTemplate,{browsertype:"Diagnoses"}));
         $target.addClass("container cf");
         
@@ -293,13 +286,9 @@ require.def(["/static/plugins/vb/js/frontdesk.js"], function(FrontDesk){  // $ta
         reloadBrowser("");
         
         // Setup the search 
-        $target.find("#vocab_search").autocomplete2({
-            fixture:"/static/fixtures/search_results.json",
-            start: function() {
-                $input.removeClass("searchIdle").addClass("searchAjax");
-            },
+        
+        $target.find("#vocab_search").placeholder().autocomplete2({
             success: function(query, resp) {
-                $input.removeClass("searchAjax").addClass("searchIdle");
                 $receiver.empty();
                 $.each(resp, function(index, value){
                     if (value.id === -1) {
@@ -372,7 +361,7 @@ require.def(["/static/plugins/vb/js/frontdesk.js"], function(FrontDesk){  // $ta
             error: function(){
                 $input.removeClass("searchAjax").addClass("searchIdle");
             }
-        }, 'Search criteria...');//helptext('Search criteria...');
+        }, 'Search terms..');
         
         
         $target.bind("UpdateDSEvent", function(evt, new_ds){
