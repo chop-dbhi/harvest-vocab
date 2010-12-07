@@ -1,9 +1,10 @@
-require.def(function(){  // $target refers to the div on screen where the concept will be displayed
+require.def(["/static/plugins/vb/js/frontdesk.js"], function(FrontDesk){  // $target refers to the div on screen where the concept will be displayed
+    console.log(FrontDesk);
     var $target = $(document.createElement("div"));
     var prefix = "/vocab";
     
     var breadcrumbsTemplate = [ 
-    '<% if (this.path.length===0) {%>',
+    '<% if (this.path.length === 0) {%>',
     '<input type="button" style="visibility:hidden;" id="button-back" class="button-back" value="Back"/><b>Diagnoses</b>',
     '<%} else { %>',
     '<input type="button" id="button-back" class="button-back" value="Back"/><div class="breadcrumb" catid="">Diagnoses</div>',
@@ -188,8 +189,7 @@ require.def(function(){  // $target refers to the div on screen where the concep
     };
     
     var reloadBrowser = function(category){
-       $.get(prefix+'/browse/'+category.replace("#",""), function(data){
-               data = $.parseJSON(data);
+       $.getJSON(prefix+'/browse/'+category.replace("#",""), function(data){
                $target.find("#browser_list").empty();
                for (var index = 0; index < data.nodes.length; index++) {
                    var $li = $($.jqote(browseTemplate,data.nodes[index]));
@@ -256,12 +256,6 @@ require.def(function(){  // $target refers to the div on screen where the concep
                        reloadBrowser("#"+data.path[data.path.length-2].child_ref);
                    }
                });
-       }, "json", function(settings){
-           if (settings.url === (prefix+"/browse/")) {
-              return $.parseJSON($.ajax({ type: "GET", url: "/static/fixtures/root.json", async: false, dataType:"json" }).responseText); 
-           } else {
-              return $.parseJSON($.ajax({ type: "GET", url: "/static/fixtures/notroot.json", async: false, dataType:"json" }).responseText);
-           }
        }); 
     };
     
@@ -380,35 +374,6 @@ require.def(function(){  // $target refers to the div on screen where the concep
             }
         }, 'Search criteria...');//helptext('Search criteria...');
         
-        
-        function FrontDesk(){
-            
-            var guests = 0;
-            var empty = [];
-            var full = 0;
-            
-            this.onEmpty = function(cb){
-                empty.push(cb);
-            };
-            
-            this.onFull = function(cb){
-                full.push(cb);
-            };
-            
-            this.checkIn = function(){
-                guests++;
-            };
-            
-            this.checkOut = function(){
-                guests--;
-                if (guests === 0){
-                    $.each(empty, function(index, element){
-                        element();
-                    });
-                }
-            };
-            
-        }
         
         $target.bind("UpdateDSEvent", function(evt, new_ds){
             var operator = /operator$/;

@@ -105,21 +105,4 @@ def retrieve_node(request):
         }
         
     return HttpResponse(json.dumps(value), mimetype="application/json")
-    
 
-def dependencies(request):
-    
-    depends = {
-        "views": [
-            {
-                "title": "Vocabulary Browser",
-                "datatype": "diagnoses",
-                "type": "vocabulary",
-                "id": "graphical",
-                "execute": "/static/js/vocabulary.js",
-                "css": "/static/css/vocabulary.css"
-            } 
-        ]
-    }
-    
-    return HttpResponse(json.dumps(depends),mimetype="application/json")
