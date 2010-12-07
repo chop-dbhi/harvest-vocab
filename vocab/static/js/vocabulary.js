@@ -113,7 +113,6 @@ require.def(function(){  // $target refers to the div on screen where the concep
     // Make sure the currently displayed nodes are correctly colored
     // as to whether they are selected for the query.
     var refreshBrowser = function(){
-        console.log("refreshBrowser");
         $target.find("#browser_list li").removeClass("added");
         $target.find("#browser_list li input").attr("disabled","");
         
@@ -144,11 +143,11 @@ require.def(function(){  // $target refers to the div on screen where the concep
         if ($node.data("node").child_ref){
             index = $.inArray($node.data("node").id,ds[folder]);
             ds[folder].splice(index,1);
-            $target.trigger("ElementChangedEvent", [{name:folder, value:ds[folder]}]);
+            $target.trigger("ElementChangedEvent", [{name:folder, value:ds[folder].length>0?ds[folder]:undefined}]);
         }else{
             index = $.inArray($node.data("node").id,ds[leaf]);
             ds[leaf].splice(index,1);
-            $target.trigger("ElementChangedEvent", [{name:leaf, value:ds[leaf]}]);
+            $target.trigger("ElementChangedEvent", [{name:leaf, value:ds[leaf].length>0?ds[leaf]:undefined}]);
         }
         $node.remove();
         refreshBrowser();
