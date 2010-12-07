@@ -387,7 +387,7 @@ require.def(function(){  // $target refers to the div on screen where the concep
         $target.bind("UpdateDSEvent", function(evt,new_ds){
             if (!$.isEmptyObject(new_ds)){
                 ds = new_ds;
-                reloadBrowser();
+                refreshBrowser();
             } 
         });
         
