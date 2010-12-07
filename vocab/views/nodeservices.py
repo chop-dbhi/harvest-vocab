@@ -1,10 +1,11 @@
 from django.shortcuts import render_to_response
 from django.template.loader import render_to_string
-from vocab.models import (Diagnosis, DiagnosisCategory)
+from avocado.models import Field
+from core.models import VocabularyCategoryAbstract,VocabularyItemAbstract
+from production.models import Diagnosis, DiagnosisCategory
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.db.models import Q
 import json
-
 
 def children_of_folder(request, folder_id=None):
     if folder_id:
@@ -72,6 +73,39 @@ def search_nodes(request):
     
     return HttpResponse(json.dumps(folders), mimetype="application/json")
 
+def retrieve_node(request):
+    field_id = request.GET['field']
+    instance_id = request.GET['instance']
+    
+    field = Field.objects.get(id=field_id)
+    node = field.model.objects.get(id=instance_id)
+    
+    if isinstance(node, VocabularyItemAbstract):
+        # Request is for a leaf node
+        value = { 
+            "path":[{"name":item.name, "id":item.id, "child_ref":item.id } for item in node.categories.order_by("diagnosisindex__level").reverse()],
+            "name": node.name,
+            "id":node.id,
+            "child_ref": "",
+            "attributes": { 
+                "icd9": node.icd9 if node.icd9 and node.icd9 != "None" else None,
+                "clinibase": (node.datasource.id_1 if node.datasource and node.datasource.field_1 == "diagnosis.id"
+                              and node.datasource.source == "Clinibase" 
+                              else None)
+            }
+        }        
+    else:
+        # request is for a category node
+        value = {
+            "path":[{"name":item.name, "id":item.id, "child_ref":item.id } for item in node.path_to_root()],
+            "name": node.name,
+            "id":node.id,
+            "child_ref": node.id,
+            "attributes": {}
+        }
+        
+    return HttpResponse(json.dumps(value), mimetype="application/json")
+    
 
 def dependencies(request):
     

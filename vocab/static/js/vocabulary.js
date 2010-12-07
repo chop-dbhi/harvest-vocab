@@ -113,6 +113,7 @@ require.def(function(){  // $target refers to the div on screen where the concep
     // Make sure the currently displayed nodes are correctly colored
     // as to whether they are selected for the query.
     var refreshBrowser = function(){
+        console.log("refreshBrowser");
         $target.find("#browser_list li").removeClass("added");
         $target.find("#browser_list li input").attr("disabled","");
         
@@ -154,9 +155,6 @@ require.def(function(){  // $target refers to the div on screen where the concep
     };
 
 
-
-    // This function will use the "selected" object to create
-    // the tree structure that the Avocado state framework expects
     var addNode = function(node){
        var isFolder = false;
        if (node.child_ref){
@@ -188,7 +186,6 @@ require.def(function(){  // $target refers to the div on screen where the concep
             ds[leaf].unshift(node.id);
             $target.trigger("ElementChangedEvent", [{name:leaf, value:ds[leaf]}]);
        }
-       
     };
     
     var reloadBrowser = function(category){
@@ -384,11 +381,65 @@ require.def(function(){  // $target refers to the div on screen where the concep
             }
         }, 'Search criteria...');//helptext('Search criteria...');
         
-        $target.bind("UpdateDSEvent", function(evt,new_ds){
+        
+        function FrontDesk(){
+            
+            var guests = 0;
+            var empty = [];
+            var full = 0;
+            
+            this.onEmpty = function(cb){
+                empty.push(cb);
+            };
+            
+            this.onFull = function(cb){
+                full.push(cb);
+            };
+            
+            this.checkIn = function(){
+                guests++;
+            };
+            
+            this.checkOut = function(){
+                guests--;
+                if (guests === 0){
+                    $.each(empty, function(index, element){
+                        element();
+                    });
+                }
+            };
+            
+        }
+        
+        $target.bind("UpdateDSEvent", function(evt, new_ds){
+            var operator = /operator$/;
+            var hotelVocab = new FrontDesk();
+            hotelVocab.onEmpty(refreshBrowser);
+            
             if (!$.isEmptyObject(new_ds)){
-                ds = new_ds;
-                refreshBrowser();
-            } 
+                // Add items
+                for (key in new_ds){
+                    // ignore the operator
+                    if (operator.test(key)) continue;
+                    
+                    // key = "concept_field"
+                    // concept doesn't matter here
+                    var field = key.split("_")[1];
+                    $.each(new_ds[key], function(index,instance_id){
+                        hotelVocab.checkIn();
+                        $.ajax({url:"/vocab?field="+field+"&instance="+instance_id, 
+                                success: function(node) {
+                                     addNode(node);
+                                     hotelVocab.checkOut();
+                                },
+                                dataType:"json",
+                                error:function(){
+                                     hotelVocab.checkOut();
+                                }
+                              });
+                    });
+                }   
+            }
         });
         
        $target.bind("UpdateQueryButtonClicked", function(event){
