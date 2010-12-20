@@ -94,7 +94,7 @@ define(
                     '</div>',
                 '</div>',
 
-                '<b>Patient has been diagnosed with:</b>',
+                '<b>Patient diagnosed  with one or more of the following:</b>',
 
                 '<ul id="browser-selected" class="browser-content"></ul>',
 
