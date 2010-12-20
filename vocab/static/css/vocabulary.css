@@ -61,17 +61,17 @@
 }
 
 #browser .browser-content li.added {
-    color: #fff;
-    background-color: #666;
-    text-shadow: 1px 1px 0 #000;
+    color: #000;
+    background-color: #ddd;
+    text-shadow: 1px 1px 0 #fff;
 }
 
 #browser .browser-content li.added:hover {
-    background-color: #666;
+    background-color: #ddd;
 }
 
 #browser .browser-content li.added .meta {
-    color: #ddd;
+    color: #666;
 }
 
 #browser form {
