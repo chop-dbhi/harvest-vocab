@@ -1,166 +1,102 @@
-.cf:after {
-    content: ".";
-    display: block;
-    height: 0;
-    clear: both;
-    visibility: hidden;
+#browser-breadcrumbs {
+    height: 12px;
+    font-size: 0.8em;
+    margin: 10px 0;
+    padding: 0 10px;
+
 }
 
-.browser-section::-webkit-scrollbar {
+#browser-breadcrumbs > * {
+    margin-right: 5px;
+}
+
+#browser .browser-content {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0;
+    max-height: 400px;
+    overflow: auto;
+}
+
+#browser .browser-content::-webkit-scrollbar {
     width: 1ex;
+}
+
+#browser .browser-content::-webkit-scrollbar-thumb:vertical {
     background: rgba(0, 0, 0, 0.2);
     -webkit-border-radius: 1ex;
 }
 
-.searchIdle {
-    background: #fff url('../img/icons/magnifier.png') no-repeat 5px;
+#browser .browser-content li {
+    border-bottom: 1px dotted #999;
+    padding: 5px 10px;
+    list-style: none;
+    text-shadow: 1px 1px 0 #fff;
+}
+
+#browser .browser-content li > * {
+    max-width: 450px;
+    display: inline-block;
+    *display: inline;
+    zoom: 1;
+    vertical-align: middle;
+}
+
+#browser .browser-content li .meta {
+    font-size: 0.8em;
+    color: #999;
+    font-weight: normal;
+}
+
+#browser .browser-content li:first-child {
+    border-top: 1px dotted #999;
+}
+
+#browser .browser-content li button {
+    margin-right: 10px;
+}
+
+#browser .browser-content li.folder {
+    font-weight: bold;
+}
+
+#browser .browser-content li.added {
+    color: #fff;
+    background-color: #666;
+    text-shadow: 1px 1px 0 #000;
+}
+
+#browser .browser-content li.added:hover {
+    background-color: #666;
+}
+
+#browser .browser-content li.added .meta {
+    color: #ddd;
+}
+
+#browser form {
+    margin-top: 10px;
+    padding: 0 10px;
+}
+
+#browser form input {
+    -moz-box-shadow: inset 2px 2px 3px 0px #ddd;
+    -webkit-box-shadow: inset 2px 2px 3px 0px #ddd;
+    box-shadow: inset 2px 2px 3px 0px #ddd;
+    -moz-border-radius: 15px 15px 15px 15px;
+
+    border-radius: 15px 15px 15px 15px;
+    background: #fff url(../img/icons/search.png) no-repeat 3px;
     padding: 2px 5px 2px 21px;
-    border: 1px solid #aaa;
-    -moz-border-radius: 10px;
-    border-radius:10px;
-}
-.searchAjax {
-    background: #fff url('../img/ajax-loader-d16.gif') no-repeat 5px;
-    padding: 2px 5px 2px 21px;
-    border: 1px solid #aaa;
-    -moz-border-radius: 10px;
-    border-radius:10px;
+    border: 1px solid #999;
 }
 
-ul.browser-section li.browser-item {
-    list-style: none;
-    margin: 0px 5px 0px 0px;
-    padding: 0px;
-    width:100%;
+/* only browser-choices should convey this behavior */
+#browser-choices li.folder {
+    background: transparent url('../img/icons/play_9x12.png') no-repeat 98% center;
 }
 
-ul.browser-section li.browser-item.folder {
-    background-image:url('../img/icons/play_9x12.png');
-    background-repeat:no-repeat;
-    background-position:right;
-}
-
-ul.browser-section li.search-item {
-    list-style: none;
-    margin: 0px 5px 0px 0px;
-    padding: 0px;
-    width:100%;
-}
-
-ul.browser-section li.selected-item {
-    list-style: none;
-    margin: 0px 5px 0px 0px;
-    padding: 0px;
-    width:auto;
-    background-color:#ccdddd;
-}
-
-ul#members {
-    width:45em;
-}
-
-#browser, #results, #browser_list{
-    height:19em;
-    width:auto;
-    overflow-y:auto;
-    overflow-x:hidden;
-}
-
-.button-add {
-    margin-right:20px;
-    position:absolute;
-    float:left;
-}
-.button-descend{
-    height:16px;
-    width:10px;
-    float:right;
-}
-
-#selected{
-    height:10em;
-    width:auto;
-    overflow-y:auto;
-    overflow-x:hidden;
-}
-
-#nav{
-    margin-bottom:.5em;
-}
-
-.custom_attr {
-    font-size:12px;
-}
-
-.node_path {
-    font-size:10px;
-    color:grey;
-}
-.node_item_right{
-    float:left;
-    position:relative;
-    width:auto;
-}
-.node_item_left{
-    float:left;
-    position:relative;
-    width:4em;
-    height:25px;
-}
-
-.floatclear {
-    float:clear;
-}
-
-ul.browser-section li.browser-item.list_on {
-    border-style:solid;
-    border-width:1px;
-    border-color:black;
-    cursor:pointer;
-}
-ul.browser-section li.search-item.list_on {
-    border-style:solid;
-    border-width:1px;
-    border-color:black;
-    cursor:pointer;
-}
-
-ul.browser-section li.browser-item.added{
-    background-color:#ccdddd;
-}
-ul.browser-section li.search-item.added {
-    background-color:#ccdddd;
-}
-.path_node.over{
-    cursor:pointer;
-    font-size:12px;
-}
-
-.hovercrumbs{
-    cursor:pointer;
-    font-size:15px;
-    border-bottom:solid;
-    border-width:1px;
-}
-.breadcrumb{
-    display:inline;
-}
-
-.browser-section li {
-    border: 1px solid #DDDDDD;
-    list-style: none;
-    margin:0px;
-}
-.browser-section {
-    list-style:none;
-    margin:0px 5px 0px 0px;
-    padding-right:5px;
-}
-
-.hidden{
-    display:none;
-}
-
-.search-item {
-    float:left;
+#browser-choices li.folder:hover {
+    cursor: pointer;
+    background-color: #eee;
 }

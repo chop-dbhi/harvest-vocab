@@ -1,4 +1,4 @@
-require.def(function(){
+define(function(){
     // This is the beginning of something - JMM
     function FrontDesk(){
         

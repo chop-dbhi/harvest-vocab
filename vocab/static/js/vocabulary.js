@@ -1,135 +1,132 @@
-require.def(["/static/plugins/vb/js/frontdesk.js"], function(FrontDesk){  // $target refers to the div on screen where the concept will be displayed
-    var $target = $(document.createElement("div"));
+define(
+
+    ["/static/plugins/vb/js/frontdesk.js"],
+
+    function(FrontDesk) {
+    // browser refers to the div on screen where the concept will be displayed
     var prefix = "/vocab";
     
     var breadcrumbsTemplate = $.jqotec([ 
-    '<% for (var index = 0; index < this.path.length; index++) {%>',
-    '   <% if (index === (this.path.length-1)) {%>',
-    '&raquo; <b><%=this.path[index].name%></b>',
-    '   <% } else { %>',
-    '&raquo; <div class="breadcrumb" data-catid="<%=this.path[index].child_ref%>"><%=this.path[index].name%></div>',
-    '   <% } %>',
-    '<% } %>'].join(""));
+        '<% for (var index = 0; index < this.path.length; index++) {%>',
+            '<% if (index === (this.path.length-1)) {%>',
+                '&raquo; <b><%=this.path[index].name%></b>',
+            '<% } else { %>',
+                '&raquo; <a href="#" data-catid="<%=this.path[index].child_ref%>"><%=this.path[index].name%></a>',
+            '<% } %>',
+        '<% } %>'].join(''));
     
     var browseTemplate = $.jqotec([
-    '<% if (this.child_ref) { %>',
-    '<li class="browser-item cf folder">',
-    '<div class="node_item_left">',
-    '<input type="button" class="button-add" value = "+"/>',
-    '</div>',
-    '<div class="node_item_right">',
-    '<div style="float:left">',
-    '<%=this.name%>',
-    '</div>',
-    '</div>',
-    '</li>',
-    '<% } else { %>',
-    '<li class="browser-item cf leaf">',
-    '<div class="node_item_left">',
-    '<input type="button" class="button-add" value = "+"/>',
-    '</div>',
-    '<div class="node_item_right">',
-    '<div>',
-    '<%=this.name%>',
-    '</div>',
-    '<div class="custom_attr">',
-    '<% if (this.attributes.icd9) { %>',
-    'ICD-9 : <%=this.attributes.icd9%>',
-    '<% } %>',
-    '<% if (this.attributes.clinibase) { %>',
-    'Clinibase ID : <%=this.attributes.clinibase%>',
-    '<% } %>',
-    '</div>',
-    '</div>',
-    '</li>',
-    '<% } %>'].join(''));
+        '<% if (this.child_ref) { %>',
+            '<li class="folder">',
+                '<button class="button-add">+</button>',
+                '<span><%= this.name %></span>',
+            '</li>',
+        '<% } else { %>',
+            '<li class="leaf">',
+                '<button class="button-add">+</button>',
+                '<div>',
+                    '<span><%= this.name %></span>',
+                    '<div class="meta">',
+                        '<% if (this.attributes.icd9) { %>',
+                            'ICD-9 : <%= this.attributes.icd9 %>',
+                        '<% } %>',
+                        '<% if (this.attributes.clinibase) { %>',
+                            ' Clinibase ID : <%= this.attributes.clinibase %>',
+                        '<% } %>',
+                    '</div>',
+                '</div>',
+            '</li>',
+        '<% } %>'].join(''));
     
     var searchResultsTemplate = $.jqotec([
-    '<li class="search-item">',
-    '<div class="node_item_left">',
-    '<% if (this.child_ref) {%>',
-    '<input type="button" value="+" class="button-add folder" id="folder<%=this.id%>"/>',
-    '<% } else {%>',
-    '<input type="button" value="+" class="button-add leaf" id="leaf<%=this.id%>"/>',
-    '<%}%>',
-    '</div>',
-    '<div class="node_item_right">',
-    '<div>',
-    '<% if (this.child_ref) { %>',
-    '<%=this.name%>',
-    '<% } else { %>',
-    '<%=this.name%>',
-    '<% } %>',
-    '</div>',
-    '<div class="custom_attr">',
-    '<% if (this.attributes.icd9) { %>',
-    'ICD-9 : <%=this.attributes.icd9%>',
-    '<% } %>',
-    '<% if (this.attributes.clinibase) { %>',
-    'Clinibase ID : <%=this.attributes.clinibase%>',
-    '<% } %>',
-    '</div>',
-    '<div class="node_path">',
-    '<% for (index = 0; index < this.path.length; index++){ %>',
-    '<div pathid="<%=index%>" class="path_node" style="display:inline;"><%=this.path[index].name%></div>',
-    '<% if (index != this.path.length -1){%> &raquo <%}%>',
-    '<% } %>',
-    '</div>',
-    '</div>',
-    '</li>',
-    '<div class="floatclear"></div>',
-    ].join(''));
+        '<li class="search-item">',
+            '<% if (this.child_ref) {%>',
+                '<button class="button-add folder" id="folder<%=this.id%>">+</button>',
+            '<% } else {%>',
+                '<button class="button-add leaf" id="leaf<%=this.id%>">+</button>',
+            '<% } %>',
+
+            '<div>',
+                '<span>',
+                    '<%= this.name %>',
+                '</span>',
+                '<div class="meta">',
+                    '<% if (this.attributes.icd9) { %>',
+                        'ICD-9 : <%= this.attributes.icd9 %>',
+                    '<% } %>',
+                    '<% if (this.attributes.clinibase) { %>',
+                        ' Clinibase ID : <%= this.attributes.clinibase %>',
+                    '<% } %>',
+
+                    '<div class="node_path">',
+                        '<% for (index = 0; index < this.path.length; index++){ %>',
+                            '<div pathid="<%=index%>" class="path_node" style="display:inline;"><%=this.path[index].name%></div>',
+                            '<% if (index != this.path.length -1){%> &raquo <%}%>',
+                        '<% } %>',
+                    '</div>',
+
+                '</div>',
+            '</div>',
+        '</li>',
+        ].join(''));
     
-    var vocabBrowserTemplate = $.jqotec([
-    ' <div class="toolbar header tabs">',
-    '    <a id ="showBrowse" class="tab" href="#browseTab">Browse Diagnoses</a>',
-    '    <a class="tab" href="#searchTab">Search Diagnoses</a>',
-    ' </div>',
-    ' <div class="content">',
-    '     <div id="browseTab">',
-    '         <div id="nav"></div>',
-    '         <ul id="browser_list" class="browser-section cf"></ul>',
-    '     </div>',
-    '     <div id="searchTab">',
-    '         <form method="get" action="/vocab/search/">',
-    '             <input type="text" class="autocomplete" id="vocab_search" name="q" size="50" placeholder="Search terms..">',
-    '         </form>',
-    '         <div>',
-    '         <ul id="results" class="browser-section">',
-    '         </ul>',
-    '         </div>',
-    '     </div>',
-    '     <hr />',
-    '     <p>Patient has been diagnosed with:</p>',
-    '     <div id="selected"><ul class="browser-section" id="members"></ul></div>',
-    '</div>'
-    ].join(''));
+    var vocabBrowserTemplate = [
+        '<div id="browser" class="container">',
+
+            '<div class="toolbar header tabs">',
+                '<a id="showBrowse" class="tab" href="#browseTab">Browse Diagnoses</a>',
+                '<a class="tab" href="#searchTab">Search Diagnoses</a>',
+            '</div>',
+
+            '<div class="content">',
+
+                '<div id="browseTab">',
+                    '<div id="browser-breadcrumbs"></div>',
+                    '<ul id="browser-choices" class="browser-content"></ul>',
+                '</div>',
+
+                '<div id="searchTab">',
+                    '<form method="get" action="/vocab/search/">',
+                        '<input type="text" class="search" id="browser-search" name="q" size="25" placeholder="Search terms..">',
+                    '</form>',
+                    '<div>',
+                        '<ul id="browser-results" class="browser-content"></ul>',
+                    '</div>',
+                '</div>',
+
+                '<b>Patient has been diagnosed with:</b>',
+
+                '<ul id="browser-selected" class="browser-content"></ul>',
+
+            '</div>',
+        '</div>'
+    ].join('');
     
     // Make sure the currently displayed nodes are correctly colored
     // as to whether they are selected for the query.
     var refreshBrowser = function(){
-        $target.find("#browser_list li").removeClass("added");
-        $target.find("#browser_list li input").attr("disabled","");
+        $('li', choices).removeClass("added");
+        $('button', choices).attr("disabled",false);
         
-        $target.find("#results li").removeClass("added");
-        $target.find("#results li input").attr("disabled","");
+        $('li', results).removeClass('added');
+        $('button', results).attr('disabled', false); 
         
-        
-        $target.find("#browser_list li").add("#results li").each(function(index, element){
-           element = $(element);
-           if (element.data('node').child_ref){
-               if ($.inArray(element.data('node').id, ds[folder]) !=-1){
-                   element.addClass("added");
-                   element.find("input").attr("disabled","disabled");
-               }
-    
-           } else{
-               if ($.inArray(element.data('node').id, ds[leaf]) !=-1){
+        $('li', choices).add('li', results).each(function(index, element) {
+            element = $(element);
+
+            if (element.data('node').child_ref){
+                if ($.inArray(element.data('node').id, ds[folder]) !=-1){
                     element.addClass("added");
-                    element.find("input").attr("disabled","disabled");
+                    element.find("button").attr("disabled","disabled");
+                } 
+            } else {
+                if ($.inArray(element.data('node').id, ds[leaf]) !=-1){
+                    element.addClass("added");
+                    element.find("button").attr("disabled","disabled");
                }
-           }
+            }
         });
+
     };
     
     // Remove a previously selected node..
@@ -138,11 +135,11 @@ require.def(["/static/plugins/vb/js/frontdesk.js"], function(FrontDesk){  // $ta
         if ($node.data("node").child_ref){
             index = $.inArray($node.data("node").id,ds[folder]);
             ds[folder].splice(index,1);
-            $target.trigger("ElementChangedEvent", [{name:folder, value:ds[folder].length > 0 ?ds[folder]:undefined}]);
+            browser.trigger("ElementChangedEvent", [{name:folder, value:ds[folder].length > 0 ?ds[folder]:undefined}]);
         }else{
             index = $.inArray($node.data("node").id,ds[leaf]);
             ds[leaf].splice(index,1);
-            $target.trigger("ElementChangedEvent", [{name:leaf, value:ds[leaf].length > 0 ? ds[leaf]:undefined}]);
+            browser.trigger("ElementChangedEvent", [{name:leaf, value:ds[leaf].length > 0 ? ds[leaf]:undefined}]);
         }
         $node.remove();
         refreshBrowser();
@@ -150,12 +147,11 @@ require.def(["/static/plugins/vb/js/frontdesk.js"], function(FrontDesk){  // $ta
 
 
     var addNode = function(node){
-       var isFolder = false;
-       if (node.child_ref){
-           isFolder = true;
-       }
-       var $new_node = $('<li class="selected-item"><input type="button" value="-" class="button-remove"/>'+node.name+'</li>');
-       $new_node.find("input").click(function(){
+       var isFolder = !!node.child_ref ? true : false;
+
+       var $new_node = $('<li><button class="button-remove">-</button>'+node.name+'</li>');
+
+       $new_node.find("button").click(function(){
           $(this).trigger("removeItemEvent"); 
        });
        
@@ -169,202 +165,160 @@ require.def(["/static/plugins/vb/js/frontdesk.js"], function(FrontDesk){  // $ta
            if ($.inArray(node.id,ds[folder])!=-1){
                return;
            }
-           $target.find("#members").prepend($new_node);
+           $new_node.addClass('folder');
+           selected.prepend($new_node);
            ds[folder].unshift(node.id);
-           $target.trigger("ElementChangedEvent", [{name:folder, value:ds[folder]}]);
+           browser.trigger("ElementChangedEvent", [{name:folder, value:ds[folder]}]);
        }else{
             if ($.inArray(node.id, ds[leaf])!=-1){
                   return;
             }
-            $target.find("#members").prepend($new_node);
+            selected.prepend($new_node);
             ds[leaf].unshift(node.id);
-            $target.trigger("ElementChangedEvent", [{name:leaf, value:ds[leaf]}]);
+            browser.trigger("ElementChangedEvent", [{name:leaf, value:ds[leaf]}]);
        }
     };
     
-    var reloadBrowser = function(category){
-       $.getJSON(prefix+'/browse/'+category.replace("#",""), function(data){
-               $target.find("#browser_list").empty();
-               for (var index = 0; index < data.nodes.length; index++) {
-                   var $li = $($.jqote(browseTemplate,data.nodes[index]));
-                   $li.data("node",data.nodes[index]);
-                   
-                   // Check to see if the item has been selected
-                   if (data.nodes[index].child_ref){
-                       if ($.inArray(data.nodes[index].id, ds[folder])!=-1){
-                           $li.addClass("added");
-                       }
-                   }else{
-                        if ($.inArray(data.nodes[index].id, ds[leaf])!=-1){
-                              $li.addClass("added");
-                        }
-                   }
-                   $("#browser_list").append($li);
-                   $li.bind("addItemEvent", function(evt){
-                       addNode($(this).data("node"));
-                       $(this).addClass("added");
-                       return false;
-                   });
-                   $li.bind("descendEvent", function(){
-                       reloadBrowser("#"+$(this).data("node").child_ref);
-                       return false;
-                   });
-                   $li.filter(".folder").click(function(){
-                       $(this).trigger("descendEvent");
-                   });
-                   
-                   $li.filter(".folder").hover(function(){
-                      $(this).addClass("list_on"); 
-                   }, function(){
-                      
-                      $(this).removeClass("list_on");
-                   });
-               }
-               $target.find('.button-add').click(function(evt){
-                   $(this).trigger("addItemEvent");
-                   $(this).attr("disabled", "disabled");
-                   return false;
-               });
-               
-               $target.find('.button-descend').click(function(evt){
-                    $(this).trigger("descendEvent");
-                    return false;
-               });
-               
-               $target.find('#nav').empty().html($.jqote(breadcrumbsTemplate,data));
-               $target.find('#nav div.breadcrumb').bind("click", function(){
-                   reloadBrowser("#"+$(this).data("catid"));
-                   return false;
-               });
-               $target.find('#nav div.breadcrumb').hover(function(){
-                   $(this).addClass("hovercrumbs");
-                   
-               }, function(){
-                   $(this).removeClass("hovercrumbs");
-               });
+    var reloadBrowser = function(category) {
+        var basenode = {child_ref: '', name: 'All'}; 
 
-               $target.find('#button-back').click(function(evt){
-                   if (data.path.length == 1) {
-                       reloadBrowser("#");
-                   }else{ 
-                       reloadBrowser("#"+data.path[data.path.length-2].child_ref);
-                   }
-               });
-       }); 
+        $.getJSON(prefix+'/browse/'+category.toString().replace("#",""), function(data){
+
+            data.path.unshift(basenode);
+            
+            choices.empty();
+
+            for (var index = 0; index < data.nodes.length; index++) {
+                var $li = $($.jqote(browseTemplate,data.nodes[index]));
+                $li.data("node",data.nodes[index]);
+                   
+                // Check to see if the item has been selected
+                if (data.nodes[index].child_ref){
+                    if ($.inArray(data.nodes[index].id, ds[folder])!=-1){
+                        $li.addClass("added");
+                    }
+                } else {
+                    if ($.inArray(data.nodes[index].id, ds[leaf])!=-1){
+                        $li.addClass("added");
+                    }
+                }
+
+                choices.append($li);                   
+            }
+ 
+            breadcrumbs.empty().html($.jqote(breadcrumbsTemplate,data));
+
+        }); 
     };
     
     var ds = {};
     var that = {};
     var leaf;
     var folder;
-    
+
+    var browser = $(vocabBrowserTemplate),
+        tabs = $('.tabs', browser),
+        choices = $('#browser-choices', browser),
+        selected = $('#browser-selected', browser),
+        search = $('#browser-search', browser),
+        results = $('#browser-results', browser),
+        breadcrumbs = $('#browser-breadcrumbs', browser);
+
+    // enable tabs, we use a very barebones tabs implementation
+    // the core code only adds the appropriate classes to selected
+    // and non-selected tabs, represented by <a> elements.
+    tabs.tabs(false, function (evt, $tab){
+        refreshBrowser();
+        var $siblings = $tab.siblings('.tab');
+        browser.find($tab.attr('hash')).show();
+        $siblings.each(function(index, neighbor){
+            browser.find($(neighbor).attr('hash')).hide();
+        });
+    });
+
+    // breadcrumb navigation
+    breadcrumbs.delegate('a', 'click', function(){
+        reloadBrowser($(this).data("catid"));
+        return false;
+    });
+
+    // add item from available choices
+    choices.delegate('button', 'click', function(evt) {
+        var target = $(this);
+            li = target.parent();
+
+        target.attr("disabled", "disabled");
+
+        addNode(li.data("node"));
+        li.addClass("added");
+
+        return false;
+    });
+
+    results.delegate('button', 'click', function(evt) {
+        var target = $(this);
+            li = target.parent();
+
+        target.attr("disabled", "disabled");
+
+        addNode(li.data("node"));
+        li.addClass("added");
+
+        return false;
+    });
+
+    // descend in hierarchy
+    choices.delegate('.folder', 'click', function() {
+        reloadBrowser($(this).data("node").child_ref);
+        return false;
+    });
+
+    // remove item from selected items
+    selected.delegate('button', 'click', function() {
+        $(this).trigger("removeItemEvent"); 
+    });
+
+
     var execute = function($content_div, concept_id, data){
         leaf = concept_id+"_"+data.leaf;
         folder = concept_id+"_"+data.folder;
         ds[leaf] = [];
         ds[folder] = [];
         
-        $target.append($.jqote(vocabBrowserTemplate,{browsertype:"Diagnoses"}));
-        $target.addClass("container cf");
-        
-        var $receiver = $target.find("#results");
-        var $input = $target.find("#vocab_search");
-        
-        // enable tabs, we use a very barebones tabs implementation
-        // the core code only adds the appropriate classes to selected
-        // and non-selected tabs, represented by <a> elements.
-        $target.find('.tabs').tabs(false, function (evt, $tab){
-            refreshBrowser();
-            var $siblings = $tab.siblings('.tab');
-            $target.find($tab.attr('hash')).show();
-            $siblings.each(function(index, neighbor){
-                $target.find($(neighbor).attr('hash')).hide();
-            });
-        });
-        
         // Setup the browser
-        reloadBrowser("");
+        reloadBrowser('');
         
         // Setup the search 
         
-        $target.find("#vocab_search").placeholder().autocomplete2({
+        search.autocomplete2({
             success: function(query, resp) {
-                $receiver.empty();
+
+                results.empty();
+
                 $.each(resp, function(index, value){
                     if (value.id === -1) {
-                          $receiver.append("<div>No matches.</div>");
+                          results.html("<div>No matches.</div>");
                           return;
                     }
-                    var $li=$($.jqote(searchResultsTemplate,value));
-                    $li.data("node",value);
-                    $li.find(".path_node").hover(function(){$(this).addClass("over");},
-                                                 function(){$(this).removeClass("over");});
-                    $li.find(".path_node").each(function(index,element){
-
-                       $(element).click(function(evt){
-                           reloadBrowser("#" + value.path[parseInt($(evt.target).attr("pathid"))].id);
-                           $("#showBrowse").trigger("click");
-                           return false;
-                       });
-                        
-                    });
+                    var $li = $($.jqote(searchResultsTemplate, value));
+                    $li.data("node", value);                        
                     
-                    if (value.child_ref){
-                         if ($.inArray(value.id, ds[folder])!=-1){
-                             $li.addClass("added");
-                         }
-                    }else{
-                          if ($.inArray(value.id,ds[leaf])!=-1){
+                    if (value.child_ref) {
+                        $li.addClass('folder');
+
+                        if ($.inArray(value.id, ds[folder]) != -1)
                             $li.addClass("added");
-                          }
+                    } else {
+                        if ($.inArray(value.id,ds[leaf]) != -1)
+                            $li.addClass("added");
                     }
                     
-                    $li.filter(".folder").hover(function(){
-                       $(this).addClass("list_on"); 
-                    }, function(){
-                       $(this).removeClass("list_on");
-                    });
-                    $li.bind("addItemEvent",function(){
-                        addNode($(this).data("node"));
-                        $(this).addClass("added");
-                        return false;
-                    });
-                    $li.hover(function(){
-                         $(this).addClass("list_on"); 
-                      }, function(){
-                         
-                         $(this).removeClass("list_on");
-                      });
-                    $li.click(function(){
-                       var info = $(this).data("node");
-                       if (info.child_ref){
-                           reloadBrowser("#"+info.id);
-                       }else if (info.path){
-                           reloadBrowser("#"+info.path[info.path.length-1].id);
-                       }else{
-                           reloadBrowser("");
-                       }
-                    $("#showBrowse").trigger("click");
-                       return false;
-                    });
-                    
-                    $receiver.append($li);
-                });
-                
-                
-                $receiver.find(".button-add").click(function(){
-                    $(this).trigger("addItemEvent");
-                    $(this).attr("disabled", "disabled");
-                    return false;
-                });
-            },
-            error: function(){
-                $input.removeClass("searchAjax").addClass("searchIdle");
+                    results.append($li);
+                });                 
             }
-        }, 'Search terms..');
+        }); 
         
-        
-        $target.bind("UpdateDSEvent", function(evt, new_ds){
+        browser.bind("UpdateDSEvent", function(evt, new_ds){
             var operator = /operator$/;
             var hotelVocab = new FrontDesk();
             hotelVocab.onEmpty(refreshBrowser);
@@ -395,11 +349,11 @@ require.def(["/static/plugins/vb/js/frontdesk.js"], function(FrontDesk){  // $ta
             }
         });
         
-       $target.bind("UpdateQueryButtonClicked", function(event){
-              $target.trigger("ConstructQueryEvent");
+       browser.bind("UpdateQueryButtonClicked", function(event){
+              browser.trigger("ConstructQueryEvent");
        });
        
-       $content_div.trigger("ViewReadyEvent", [$target]);
+       $content_div.trigger("ViewReadyEvent", [browser]);
  };
  that.execute = execute;
  return that;
