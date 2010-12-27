@@ -14,7 +14,7 @@ define(
                 '&raquo; <a href="#" data-catid="<%=this.path[index].child_ref%>"><%=this.path[index].name%></a>',
             '<% } %>',
         '<% } %>'].join(''));
-    
+
     var browseTemplate = $.jqotec([
         '<% if (this.child_ref) { %>',
             '<li class="folder">',
@@ -37,7 +37,7 @@ define(
                 '</div>',
             '</li>',
         '<% } %>'].join(''));
-    
+
     var searchResultsTemplate = $.jqotec([
         '<li class="search-item">',
             '<% if (this.child_ref) {%>',
@@ -69,7 +69,7 @@ define(
             '</div>',
         '</li>',
         ].join(''));
-    
+
     var vocabBrowserTemplate = [
         '<div id="browser" class="container">',
 
@@ -101,7 +101,7 @@ define(
             '</div>',
         '</div>'
     ].join('');
-    
+
     // Make sure the currently displayed nodes are correctly colored
     // as to whether they are selected for the query.
     var refreshBrowser = function(){
@@ -128,7 +128,7 @@ define(
         });
 
     };
-    
+
     // Remove a previously selected node..
     var removeNode = function($node){
         var index;
@@ -147,14 +147,10 @@ define(
 
 
     var addNode = function(node){
-       var isFolder = !!node.child_ref ? true : false;
+       var isFolder = !!node.child_ref;
 
        var $new_node = $('<li><button class="button-remove">-</button>'+node.name+'</li>');
 
-       $new_node.find("button").click(function(){
-          $(this).trigger("removeItemEvent"); 
-       });
-       
        $new_node.data('node',node);
        $new_node.bind("removeItemEvent", function(){
             removeNode($(this));
@@ -205,7 +201,7 @@ define(
 
                 choices.append($li);                   
             }
- 
+
             breadcrumbs.empty().html($.jqote(breadcrumbsTemplate,data));
 
         }); 
@@ -245,7 +241,7 @@ define(
     // add item from available choices
     choices.delegate('button', 'click', function(evt) {
         var target = $(this);
-            li = target.parent();
+        var li = target.parent();
 
         target.attr("disabled", "disabled");
 
@@ -255,9 +251,10 @@ define(
         return false;
     });
 
+    // add item from search results
     results.delegate('button', 'click', function(evt) {
         var target = $(this);
-            li = target.parent();
+        var li = target.parent();
 
         target.attr("disabled", "disabled");
 
@@ -275,7 +272,8 @@ define(
 
     // remove item from selected items
     selected.delegate('button', 'click', function() {
-        $(this).trigger("removeItemEvent"); 
+        removeNode($(this));
+        return false;
     });
 
 
@@ -317,7 +315,7 @@ define(
                 });                 
             }
         }); 
-        
+
         browser.bind("UpdateDSEvent", function(evt, new_ds){
             var operator = /operator$/;
             var hotelVocab = new FrontDesk();
@@ -328,8 +326,6 @@ define(
                 for (key in new_ds){
                     // ignore the operator
                     if (operator.test(key)) continue;
-                    
-                    // key = "concept_field"
                     // concept doesn't matter here
                     var field = key.split("_")[1];
                     $.each(new_ds[key], function(index,instance_id){
@@ -348,11 +344,11 @@ define(
                 }   
             }
         });
-        
+
        browser.bind("UpdateQueryButtonClicked", function(event){
               browser.trigger("ConstructQueryEvent");
        });
-       
+
        $content_div.trigger("ViewReadyEvent", [browser]);
  };
  that.execute = execute;
