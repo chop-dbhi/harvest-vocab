@@ -1,0 +1,72 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" 
+                    "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+    <head>
+      <link rel="stylesheet" href="http://github.com/jquery/qunit/raw/master/qunit/qunit.css" type="text/css" media="screen" />
+      <script>
+      var require= {
+          baseUrl:'/',
+          paths: {"define":"/test/mockmods/"}  // This tells requires JS to look in test/mockmods/ when it encounters a path with /define
+                                               // so /define/form.js will actually be retrieved from /test/mockmods/form.js
+      };
+      </script>
+      <script type="text/javascript" src="http://requirejs.org/docs/release/0.15.0/minified/require-jquery-1.4.4.js"></script>
+      <script type="text/javascript" src="http://github.com/aefxx/jQote2/raw/master/jquery.jqote2.min.js"></script>
+      <script type="text/javascript" src="http://github.com/appendto/jquery-mockjax/raw/master/jquery.mockjax.min.js"></script>
+      <script type="text/javascript" src="http://github.com/Modernizr/Modernizr/raw/master/modernizr.js"></script> 
+      <script type="text/javascript" src="http://github.com/jquery/qunit/raw/master/qunit/qunit.js"></script>
+      <!--Dependencies provided by cilantro-->
+      <script type="text/javascript" src="http://versioncontrol.chop.edu/hg/apps/django-cilantro/raw-file/tip/cilantro/static/js/src/utils/ajaxsetup.js"></script>
+      <script type="text/javascript" src="http://versioncontrol.chop.edu/hg/apps/django-cilantro/raw-file/tip/cilantro/static/js/src/utils/extensions.js"></script>
+      <script type="text/javascript" src="http://versioncontrol.chop.edu/hg/apps/django-cilantro/raw-file/tip/cilantro/static/js/src/utils/sanitizer.js"></script>
+      <script type="text/javascript" src="http://versioncontrol.chop.edu/hg/apps/django-cilantro/raw-file/tip/cilantro/static/js/src/utils/html5fix.js"></script>
+
+
+      <script>QUnit.config.autostart = false;
+              function queryString2Object(queryString){
+                   var regEx = /[?&]([^=]*)=([^&]*)/g;
+                   var match;
+                   var obj = {};
+                   while(match = regEx.exec(queryString)){
+                       obj[match[1]]=match[2];
+                   }
+                   return obj;
+              }
+
+              jQuery.mockjax({
+                    url: /^\/vocab\/search\//,
+                    proxy: '/test/mockajax/search_results.json'
+              });
+
+              jQuery.mockjax({
+                    url: /^\/vocab\/browse\/$/,
+                    proxy: '/test/mockajax/root.json'
+              });
+
+              jQuery.mockjax({
+                    url: /^\/vocab\/browse\//,
+                    proxy: '/test/mockajax/notroot.json'
+              });
+
+      </script>
+      <script>require(['test/conceptmanager_test']);</script>
+    </head>
+    <body>
+        <h1 id="qunit-header">QUnit Test Suite</h1>
+        <h2 id="qunit-banner"></h2>
+        <div id="qunit-testrunner-toolbar"></div>
+        <h2 id="qunit-userAgent"></h2>
+        <ol id="qunit-tests"></ol>
+        <div id="qunit-fixture">test markup</div>
+
+        <div id="arena" style="">
+            <div id="plugin-panel" class="container">
+               <div id="plugin-tabs" class="toolbar header tabs hidden"></div>
+               <div class="content">
+                   <div id="plugin-dynamic-content"></div>
+                   <div id="plugin-static-content"></div>
+               </div>
+            </div>
+        </div>
+    </body>
+</html>

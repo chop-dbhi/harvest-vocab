@@ -130,32 +130,27 @@ define(
     };
 
     // Remove a previously selected node..
-    var removeNode = function($node){
+    var removeNode = function(node){
         var index;
-        if ($node.data("node").child_ref){
-            index = $.inArray($node.data("node").id,ds[folder]);
+        if (node.child_ref){
+            index = $.inArray(node.id, ds[folder]);
             ds[folder].splice(index,1);
-            browser.trigger("ElementChangedEvent", [{name:folder, value:ds[folder].length > 0 ?ds[folder]:undefined}]);
+            browser.trigger("ElementChangedEvent", [{name:folder, value:ds[folder].length > 0 ? ds[folder]:undefined}]);
         }else{
-            index = $.inArray($node.data("node").id,ds[leaf]);
+            index = $.inArray(node.id, ds[leaf]);
             ds[leaf].splice(index,1);
             browser.trigger("ElementChangedEvent", [{name:leaf, value:ds[leaf].length > 0 ? ds[leaf]:undefined}]);
         }
-        $node.remove();
         refreshBrowser();
     };
 
 
     var addNode = function(node){
        var isFolder = !!node.child_ref;
-
+       
        var $new_node = $('<li><button class="button-remove">-</button>'+node.name+'</li>');
 
-       $new_node.data('node',node);
-       $new_node.bind("removeItemEvent", function(){
-            removeNode($(this));
-            return false;
-       });
+       $new_node.data('node', node);
        
        if (isFolder){
            if ($.inArray(node.id,ds[folder])!=-1){
@@ -174,11 +169,11 @@ define(
             browser.trigger("ElementChangedEvent", [{name:leaf, value:ds[leaf]}]);
        }
     };
-    
+
     var reloadBrowser = function(category) {
         var basenode = {child_ref: '', name: 'All'}; 
 
-        $.getJSON(prefix+'/browse/'+category.toString().replace("#",""), function(data){
+        $.getJSON(prefix+'/browse/'+category, function(data){
 
             data.path.unshift(basenode);
             
@@ -272,7 +267,10 @@ define(
 
     // remove item from selected items
     selected.delegate('button', 'click', function() {
-        removeNode($(this));
+        var target = $(this);
+        var li = target.parent();
+        removeNode(li.data("node"));
+        li.remove();
         return false;
     });
 
@@ -287,17 +285,16 @@ define(
         reloadBrowser('');
         
         // Setup the search 
-        
         search.autocomplete2({
             success: function(query, resp) {
-
                 results.empty();
-
+                resp = (typeof resp == "string") || (resp instanceof String) ? $.parseJSON(resp) : resp; 
                 $.each(resp, function(index, value){
                     if (value.id === -1) {
                           results.html("<div>No matches.</div>");
                           return;
                     }
+                    
                     var $li = $($.jqote(searchResultsTemplate, value));
                     $li.data("node", value);                        
                     
