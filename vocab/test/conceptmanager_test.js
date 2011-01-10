@@ -1,4 +1,4 @@
-require.def(['http://versioncontrol.chop.edu/hg/apps/django-cilantro/raw-file/tip/cilantro/static/js/src/define/conceptmanager.js'], function(ConceptManager) {
+require.def(['define/conceptmanager'], function(ConceptManager) {
     var equivalent = function(x,y)
     {   var p = null;
         for(p in y)
@@ -69,16 +69,20 @@ require.def(['http://versioncontrol.chop.edu/hg/apps/django-cilantro/raw-file/ti
            js:null,
            id:6,
            views:[{
-           'type':'custom',
-           'js'  :'static/js/vocabulary',
-           'css' :'../static/css/vocabulary.css',
-           'directory':'/browser/concept',
-           'folder' : 4,
-           'leaf' : 3,
-           'title': "Vocabulary",
-           'datatype': "string",
-           'join_by': "or"
-        }]
+                
+                'elements':[{
+                    'type': 'custom', 
+                    'js'  :'static/js/vocabulary',
+                    'css' :'../static/css/vocabulary.css',
+                    'directory':'/browser/concept',
+                    'folder' : 4,
+                    'leaf' : 3,
+                    'title': "Vocabulary",
+                    'datatype': "string"
+                }]
+            }],
+          'join_by': "or",
+          'name' : "Browser"
        }
    };
    

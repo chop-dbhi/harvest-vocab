@@ -2,6 +2,7 @@ import SimpleHTTPServer
 import SocketServer
 from optparse import OptionParser
 import webbrowser
+import os.path
 
 parser = OptionParser()
 parser.add_option("-p","--port", dest="port", default = 8000, help = "Port to listen on.")
@@ -13,7 +14,10 @@ PREFIX = options.docroot
 
 class SimpleHTTPRequestPrefixableHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
     def do_GET(self):
+        print self.path
         self.path = self.path.replace(PREFIX, "")
+        if not os.path.isfile(self.path[1:]):
+            self.path = "/static/js"+self.path
         SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
 
 Handler = SimpleHTTPRequestPrefixableHandler
