@@ -120,10 +120,10 @@ define(["utils/frontdesk", "define/viewelement"],
              });
          },
          updateDS: function(evt, new_ds) {
-             var ojbRef = this;
+             var objRef = this;
              var operator = /operator$/;
              var hotelVocab = new FrontDesk();
-             hotelVocab.onEmpty(this.refreshBrowser);
+             hotelVocab.onEmpty($.proxy(this.refreshBrowser,this));
 
              if (!$.isEmptyObject(new_ds)){
                  // Add items
@@ -135,20 +135,20 @@ define(["utils/frontdesk", "define/viewelement"],
                      $.each(new_ds[key], function(index,instance_id){
                          hotelVocab.checkIn();
                          $.ajax({url:"/vocab?field="+field+"&instance="+instance_id, 
-                                 success: function(node) {
-                                      objRef.addNode(node);
-                                      hotelVocab.checkOut();
-                                 },
-                                 dataType:"json",
-                                 error:function(){
-                                      hotelVocab.checkOut();
-                                 }
-                               });
+                              success: function(node) {
+                                   objRef.addNode(node);
+                                   hotelVocab.checkOut();
+                              },
+                              dataType:"json",
+                              error:function(){
+                                   hotelVocab.checkOut();
+                              }
+                         });
                      });
                  }   
              }
          },
-         updateElement: function(evt, element) {}, // Not really needed right now.
+         updateElement: function(evt, element) {},
          elementChanged: function(evt,element) {},
          reloadBrowser: function(category) {
              var objRef = this;
@@ -236,7 +236,6 @@ define(["utils/frontdesk", "define/viewelement"],
 
             $('li', this.choices).add('li', this.results).each(function(index, element) {
                 element = $(element);
-
                 if (element.data('node').child_ref){
                     if ($.inArray(element.data('node').id, ds[folder]) !=-1){
                         element.addClass("added");
