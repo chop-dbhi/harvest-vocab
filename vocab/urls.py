@@ -5,7 +5,7 @@ from vocab.views import children_of_folder, search_nodes, retrieve_node
 # from django.contrib import admin
 # admin.autodiscover()
 urlpatterns = patterns('',
-    url(r'^browse/(?P<folder_id>\d+)?$', children_of_folder),
-    url(r'^search', search_nodes),
-    url(r'', retrieve_node)
+    url(r'^(?P<vocab_index>\d+)?/browse/(?P<folder_id>\d+)?$', children_of_folder),
+    url(r'^(?P<vocab_index>\d+)?search', search_nodes),
+    url(r'^(?P<vocab_index>\d+)?', retrieve_node)
 )

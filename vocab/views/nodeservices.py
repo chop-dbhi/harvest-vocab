@@ -2,19 +2,32 @@ from django.shortcuts import render_to_response
 from django.template.loader import render_to_string
 from avocado.models import Field
 from core.models import VocabularyCategoryAbstract,VocabularyItemAbstract
-from production.models import Diagnosis, DiagnosisCategory
+from production.models import Diagnosis, DiagnosisCategory, ProcedureType, ProcedureCategory
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.db.models import Q
 import json
 
-def children_of_folder(request, folder_id=None):
+def children_of_folder(request, vocab_index=None, folder_id=None):
+    leaf_model = None
+    category_model = None
+    
+    #TOTAL HACK we need to get this more formalized in the project settings or something
+    if vocab_index == "35":
+        leaf_model = Diagnosis
+        category_model = DiagnosisCategory
+        print "setting"
+        
+    if vocab_index == "39":
+        leaf_model = ProcedureType
+        category_model = ProcedureCategory
+    
     if folder_id:
-        folder = DiagnosisCategory.objects.get(id=folder_id)
-        folders = folder.diagnosiscategory_set.all()
-        leaves = folder.diagnoses.filter(diagnosisindex__is_terminal=True)
+        folder = category_model.objects.get(id=folder_id)
+        folders = folder.get_child_categories()
+        leaves = folder.get_child_leaves()
     else:
         folder = None
-        folders = DiagnosisCategory.objects.filter(parent_category=None)
+        folders = category_model.objects.filter(parent_category=None)
         leaves = []
     
     json_object = {}
@@ -23,9 +36,7 @@ def children_of_folder(request, folder_id=None):
                                   "id":leaf.id,
                                   "child_ref":"",
                                   "attributes": { "icd9": leaf.icd9 if leaf.icd9 and leaf.icd9 != "None" else None,
-                                                  "clinibase": "" #(leaf.datasource.id_1 if leaf.datasource and leaf.datasource.field_1 == "diagnosis.id"
-                                                                #                    and leaf.datasource.source == "Clinibase" 
-                                                                #                    else None)
+                                                  "clinibase": leaf.clinibase_id if leaf.clinibase_id and leaf.clinibase_id != "None" else None
                                                 }
                                   } for leaf in leaves])
     
@@ -37,7 +48,7 @@ def children_of_folder(request, folder_id=None):
     
     return HttpResponse(json.dumps(json_object), mimetype="application/json")
     
-def search_nodes(request):  
+def search_nodes(request, vocab_index=None):  
     search_string = request.GET['q']
     if not search_string:
         return HttpResponse(json.dumps([]), mimetype="application/json")
@@ -59,9 +70,7 @@ def search_nodes(request):
                     "id":node.id,
                     "child_ref": "",
                     "attributes": { "icd9": node.icd9 if node.icd9 and node.icd9 != "None" else None,
-                                    "clinibase": ""  #(node.datasource.id_1 if node.datasource and node.datasource.field_1 == "diagnosis.id"
-                                                     #                 and node.datasource.source == "Clinibase" 
-                                                     #                 else None)
+                                    "clinibase": node.clinibase_id if node.clinibase_id and node.clinibase_id != "None" else None
                                         
                                  }
                  } for node in leaves ]
@@ -73,7 +82,7 @@ def search_nodes(request):
     
     return HttpResponse(json.dumps(folders), mimetype="application/json")
 
-def retrieve_node(request):
+def retrieve_node(request, vocab_index=None):
     field_id = request.GET['field']
     instance_id = request.GET['instance']
     
@@ -89,9 +98,7 @@ def retrieve_node(request):
             "child_ref": "",
             "attributes": { 
                 "icd9": node.icd9 if node.icd9 and node.icd9 != "None" else None,
-                "clinibase": "" #(node.datasource.id_1 if node.datasource and node.datasource.field_1 == "diagnosis.id"
-                              #and node.datasource.source == "Clinibase" 
-                              #else None)
+                "clinibase": node.clinibase_id if node.clinibase_id and node.clinibase_id != "None" else None
             }
         }        
     else:

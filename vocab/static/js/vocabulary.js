@@ -134,7 +134,7 @@ define(["utils/frontdesk", "define/viewelement"],
                      var field = key.split("_")[1];
                      $.each(new_ds[key], function(index,instance_id){
                          hotelVocab.checkIn();
-                         $.ajax({url:"/vocab?field="+field+"&instance="+instance_id, 
+                         $.ajax({url:"/vocab/" + this.viewset.vocab_index + "?field="+field+"&instance="+instance_id, 
                               success: function(node) {
                                    objRef.addNode(node);
                                    hotelVocab.checkOut();
@@ -153,7 +153,7 @@ define(["utils/frontdesk", "define/viewelement"],
          reloadBrowser: function(category) {
              var objRef = this;
              var basenode = {child_ref: '', name: 'All'}; 
-             $.getJSON(VocabBrowser.prefix+'/browse/'+category, function(data){
+             $.getJSON(VocabBrowser.prefix + "/" + this.viewset.vocab_index + '/browse/'+category, function(data){
                  data.path.unshift(basenode);
                  objRef.choices.empty();
                  for (var index = 0; index < data.nodes.length; index++) {
