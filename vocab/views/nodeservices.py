@@ -11,10 +11,10 @@ def children_of_folder(request, folder_id=None):
     if folder_id:
         folder = DiagnosisCategory.objects.get(id=folder_id)
         folders = folder.diagnosiscategory_set.all()
-        leaves = folder.diagnoses.filter(diagnosisindex__level=1)
+        leaves = folder.diagnoses.filter(diagnosisindex__is_terminal=True)
     else:
         folder = None
-        folders = DiagnosisCategory.objects.filter(level=1)
+        folders = DiagnosisCategory.objects.filter(parent_category=None)
         leaves = []
     
     json_object = {}
@@ -23,9 +23,9 @@ def children_of_folder(request, folder_id=None):
                                   "id":leaf.id,
                                   "child_ref":"",
                                   "attributes": { "icd9": leaf.icd9 if leaf.icd9 and leaf.icd9 != "None" else None,
-                                                  "clinibase": (leaf.datasource.id_1 if leaf.datasource and leaf.datasource.field_1 == "diagnosis.id"
-                                                                                    and leaf.datasource.source == "Clinibase" 
-                                                                                    else None)
+                                                  "clinibase": "" #(leaf.datasource.id_1 if leaf.datasource and leaf.datasource.field_1 == "diagnosis.id"
+                                                                #                    and leaf.datasource.source == "Clinibase" 
+                                                                #                    else None)
                                                 }
                                   } for leaf in leaves])
     
@@ -54,14 +54,14 @@ def search_nodes(request):
                  } for node in folders ]
 
     leaves =  [  { 
-                    "path":[{"name":item.name, "id":item.id, "child_ref":item.id } for item in node.categories.order_by("diagnosisindex__level").reverse()],
+                    "path":[{"name":item.name, "id":item.id, "child_ref":item.id } for item in node.categories.order_by("diagnosisindex__level")],
                     "name": node.name,
                     "id":node.id,
                     "child_ref": "",
                     "attributes": { "icd9": node.icd9 if node.icd9 and node.icd9 != "None" else None,
-                                    "clinibase": (node.datasource.id_1 if node.datasource and node.datasource.field_1 == "diagnosis.id"
-                                                                      and node.datasource.source == "Clinibase" 
-                                                                      else None)
+                                    "clinibase": ""  #(node.datasource.id_1 if node.datasource and node.datasource.field_1 == "diagnosis.id"
+                                                     #                 and node.datasource.source == "Clinibase" 
+                                                     #                 else None)
                                         
                                  }
                  } for node in leaves ]
@@ -83,15 +83,15 @@ def retrieve_node(request):
     if isinstance(node, VocabularyItemAbstract):
         # Request is for a leaf node
         value = { 
-            "path":[{"name":item.name, "id":item.id, "child_ref":item.id } for item in node.categories.order_by("diagnosisindex__level").reverse()],
+            "path":[{"name":item.name, "id":item.id, "child_ref":item.id } for item in node.categories.order_by("diagnosisindex__level")],
             "name": node.name,
             "id":node.id,
             "child_ref": "",
             "attributes": { 
                 "icd9": node.icd9 if node.icd9 and node.icd9 != "None" else None,
-                "clinibase": (node.datasource.id_1 if node.datasource and node.datasource.field_1 == "diagnosis.id"
-                              and node.datasource.source == "Clinibase" 
-                              else None)
+                "clinibase": "" #(node.datasource.id_1 if node.datasource and node.datasource.field_1 == "diagnosis.id"
+                              #and node.datasource.source == "Clinibase" 
+                              #else None)
             }
         }        
     else:

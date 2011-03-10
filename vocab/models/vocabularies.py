@@ -1,74 +1,35 @@
 from django.db import models
-from production.models import DataSourceRef
-
-
-class DataSourceAbstract(models.Model):
-    """Defines a data source model which holds meta data regarding the origins
-    of the data for a particular row. This will allow for backward referencing
-    to the data source in case anamolies occur.
-    
-    The format of the field is as follows:
-        '<table_name>.<field_name>' e.g. 'clarity_patient.pat_id'
-    
-    Ids must be stored as chars because some ids prefix with alpha characters.
-    Multiple field/ids pairs are available for storing composite primary keys.
-    """
-    institution = models.CharField(max_length=200)
-    source = models.CharField(max_length=200)
-    field_1 = models.CharField(max_length=100)
-    id_1 = models.CharField(max_length=100)
-    field_2= models.CharField(max_length=100)
-    id_2= models.CharField(max_length=100)
-    field_3 = models.CharField(max_length=100)
-    id_3 = models.CharField(max_length=100)
-
-    class Meta:
-        abstract = True
-
-
-    def __unicode__(self):
-        return u'%s.%s.%s.%s ...' % (self.institution, self.source,
-            self.field_1, self.id_1)
-
-
-class DataSource(DataSourceAbstract):
-    class Meta:
-        app_label = u'production'
-
-class DataSourceRef(models.Model):
-    datasource = models.ForeignKey(DataSource, null=True, blank=True, editable=False)
-    
-    class Meta:
-        abstract = True
 
 class VocabularyIndexAbstract(models.Model):
     """This is a generic flattened index for vocabs. It may replace the main
     model eventually"""
-
+    
     level = models.IntegerField(blank=True, null=True)
-
+    is_terminal = models.BooleanField(default=False)
+    
     def __unicode__(self):
         return u'%s' % self.id
 
     class Meta:
         abstract = True
-
+    
 class VocabularyCategoryAbstract(models.Model):
     """Vocab categories are all essentially the same, so inherit from this for specific cases"""
     name  = models.TextField(max_length=255)
-    level = models.IntegerField()
-
+    #level = models.IntegerField()
+    
+    
     def path_to_root(self):
         """Returns a list of the parent categories to help with navigation"""
         parents = []
         parent_category = self
-        while parent_category.parentCategory != None:
-            parents.append(parent_category.parentCategory)
-            parent_category = parent_category.parentCategory
-        #Reorder so the lowest index is the highest (lest-specific) category
+        while parent_category.parent_category != None:
+            parents.append(parent_category.parent_category)
+            parent_category = parent_category.parent_category
+        """Reorder so the lowest index is the highest (lest-specific) category"""
         parents.reverse()
         return parents
-        
+   
     def __unicode__(self):
         return u'%s' % self.name
 
@@ -77,20 +38,20 @@ class VocabularyCategoryAbstract(models.Model):
 
 class VocabularyItemAbstract(models.Model):
     """Vocab items are all essentially the same, so inherit from this for specifc cases"""
-
+    
     def path_to_root(self):
         pass
-
+    
     def __unicode__(self):
             return u'%s' % self.name
-
+    
     class Meta:
         abstract = True
 
 
 class DiagnosisCategoryAbstract(VocabularyCategoryAbstract):
     """Abstract model to define the hierarchy of categories for diagnoses"""
-
+    
     class Meta:
         abstract = True
 
@@ -98,17 +59,36 @@ class DiagnosisIndexAbstract(VocabularyIndexAbstract):
     class Meta:
         abstract = True
 
-
-class DiagnosisAbstract(VocabularyItemAbstract):
-    """Contains a list of diagnoses organized into categories"""
-
-    name = models.TextField(max_length=255)
-    icd9 = models.TextField(null=True)
-
+class ProcedureIndexAbstract(VocabularyIndexAbstract):
     class Meta:
         abstract = True
 
-class Diagnosis(DiagnosisAbstract, DataSourceRef):
+class DiagnosisAbstract(VocabularyItemAbstract):
+    """Contains a list of diagnoses organized into categories"""
+    
+    name = models.TextField(max_length=255)
+    icd9 = models.TextField(null=True)
+    
+    class Meta:
+        abstract = True
+
+class ProcedureCategoryAbstract(VocabularyCategoryAbstract):
+    """Abstract model for the hierarchy of procedures"""
+    class Meta:
+        abstract = True
+
+class ProcedureTypeAbstract(models.Model):
+    """Type of procedure based on cath lab hierarchy"""
+    name = models.CharField(max_length=255)
+    cpt = models.CharField(max_length=20, null=True)
+    
+    class Meta:
+        abstract = True
+    
+    def __unicode__(self):
+        return u'%s' % self.name
+
+class Diagnosis(DiagnosisAbstract):
     #category = models.ForeignKey('DiagnosisCategory')
     categories = models.ManyToManyField('DiagnosisCategory', 
                 through='DiagnosisIndex')
@@ -119,9 +99,9 @@ class Diagnosis(DiagnosisAbstract, DataSourceRef):
         verbose_name_plural = u'Diagnoses'
 
 class DiagnosisCategory(DiagnosisCategoryAbstract):
-    parentCategory = models.ForeignKey('self', null=True)
+    parent_category = models.ForeignKey('self', null=True)
     diagnoses = models.ManyToManyField(Diagnosis, through='DiagnosisIndex')
-    
+
 
     class Meta:
         app_label = u'production'
@@ -129,10 +109,40 @@ class DiagnosisCategory(DiagnosisCategoryAbstract):
         verbose_name_plural = u'Diagnosis Categories'
 
 class DiagnosisIndex(DiagnosisIndexAbstract):
-    
+
     diagnosis = models.ForeignKey(Diagnosis)
     category = models.ForeignKey(DiagnosisCategory)
-    
+
+    class Meta:
+        app_label = u'production'
+        verbose_name = u'Diagnosis Index'
+        verbose_name_plural = u'Diagnosis Index'
+
+
+class ProcedureCategory(ProcedureCategoryAbstract):
+    parent_category = models.ForeignKey('self', null=True)
+    procedures = models.ManyToManyField('ProcedureType',
+        through = 'ProcedureIndex')
+
+    class Meta:
+        app_label = u'production'
+        verbose_name = u'Procedure Category'
+        verbose_name_plural = u'Procedure Categories'
+
+class ProcedureType(ProcedureTypeAbstract):
+    #category = models.ForeignKey(ProcedureCategory)
+    categories = models.ManyToManyField('ProcedureCategory',
+        through = 'ProcedureIndex')
+
+    class Meta:
+        app_label = u'production'
+        verbose_name = u'Procedure Type'
+        verbose_name_plural = u'Procedure Types'
+
+class ProcedureIndex(ProcedureIndexAbstract):
+    procedure = models.ForeignKey(ProcedureType)
+    category = models.ForeignKey(ProcedureCategory)
+
     class Meta:
         app_label = u'production'
         verbose_name = u'Diagnosis Index'
