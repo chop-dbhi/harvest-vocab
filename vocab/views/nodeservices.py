@@ -35,9 +35,7 @@ def children_of_folder(request, vocab_index=None, folder_id=None):
     json_object['nodes'].extend([{"name":leaf.name, 
                                   "id":leaf.id,
                                   "child_ref":"",
-                                  "attributes": { "icd9": leaf.icd9 if leaf.icd9 and leaf.icd9 != "None" else None,
-                                                  "clinibase": leaf.clinibase_id if leaf.clinibase_id and leaf.clinibase_id != "None" else None
-                                                }
+                                  "attributes": leaf.display_attributes()
                                   } for leaf in leaves])
     
     if folder:
@@ -69,10 +67,7 @@ def search_nodes(request, vocab_index=None):
                     "name": node.name,
                     "id":node.id,
                     "child_ref": "",
-                    "attributes": { "icd9": node.icd9 if node.icd9 and node.icd9 != "None" else None,
-                                    "clinibase": node.clinibase_id if node.clinibase_id and node.clinibase_id != "None" else None
-                                        
-                                 }
+                    "attributes": node.display_attributes()
                  } for node in leaves ]
     
     folders.extend(leaves)
@@ -96,10 +91,7 @@ def retrieve_node(request, vocab_index=None):
             "name": node.name,
             "id":node.id,
             "child_ref": "",
-            "attributes": { 
-                "icd9": node.icd9 if node.icd9 and node.icd9 != "None" else None,
-                "clinibase": node.clinibase_id if node.clinibase_id and node.clinibase_id != "None" else None
-            }
+            "attributes": node.display_attributes
         }        
     else:
         # request is for a category node

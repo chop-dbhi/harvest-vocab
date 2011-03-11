@@ -134,7 +134,7 @@ define(["utils/frontdesk", "define/viewelement"],
                      var field = key.split("_")[1];
                      $.each(new_ds[key], function(index,instance_id){
                          hotelVocab.checkIn();
-                         $.ajax({url:"/vocab/" + this.viewset.vocab_index + "?field="+field+"&instance="+instance_id, 
+                         $.ajax({url:"vocab/" + this.viewset.vocab_index + "?field="+field+"&instance="+instance_id, 
                               success: function(node) {
                                    objRef.addNode(node);
                                    hotelVocab.checkOut();
@@ -316,7 +316,7 @@ define(["utils/frontdesk", "define/viewelement"],
             '<div id="browser" class="container">',
 
                 '<div class="toolbar header tabs">',
-                    '<a id="showBrowse" class="tab" href="#browseTab">Browse Diagnoses</a>',
+                    '<a id="showBrowse" class="tab" href="#browseTab">Browse <%=this.viewset.title%></a>',
                     '<a class="tab" href="#searchTab">Search Diagnoses</a>',
                 '</div>',
 
@@ -343,7 +343,7 @@ define(["utils/frontdesk", "define/viewelement"],
                 '</div>',
             '</div>'
         ].join(''),
-        prefix : "/vocab"
+        prefix : "/cardiodb/vocab"
     });
     return VocabBrowser;
 });
