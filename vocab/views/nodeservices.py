@@ -1,6 +1,6 @@
 from django.shortcuts import render_to_response
 from django.template.loader import render_to_string
-from avocado.models import Field
+from avocado.models import Field, Criterion
 from core.models import VocabularyCategoryAbstract,VocabularyItemAbstract
 from production.models import Diagnosis, DiagnosisCategory, ProcedureType, ProcedureCategory
 from django.http import HttpResponse, HttpResponseRedirect, Http404
@@ -11,15 +11,10 @@ def children_of_folder(request, vocab_index=None, folder_id=None):
     leaf_model = None
     category_model = None
     
-    #TOTAL HACK we need to get this more formalized in the project settings or something
-    if vocab_index == "35":
-        leaf_model = Diagnosis
-        category_model = DiagnosisCategory
-        print "setting"
-        
-    if vocab_index == "39":
-        leaf_model = ProcedureType
-        category_model = ProcedureCategory
+    
+    criterion = Criterion.objects.get(id=vocab_index)
+    category_model = criterion.conceptfields.select_related('field').order_by('order')[2].field.model
+    leaf_model = criterion.conceptfields.select_related('field').order_by('order')[3].field.model
     
     if folder_id:
         folder = category_model.objects.get(id=folder_id)

@@ -10,7 +10,7 @@ define(["utils/frontdesk", "define/viewelement"],
          },
          render: function(){
               var objRef = this;
-              var dom = this.dom = $(VocabBrowser.vocabBrowserTemplate);
+              var dom = this.dom = $($.jqote(VocabBrowser.vocabBrowserTemplate, this.viewset));
               var tabs = $('.tabs', dom);
               var choices = this.choices = $('#browser-choices', dom);
               var selected = this.selected = $('#browser-selected', dom);
@@ -134,7 +134,7 @@ define(["utils/frontdesk", "define/viewelement"],
                      var field = key.split("_")[1];
                      $.each(new_ds[key], function(index,instance_id){
                          hotelVocab.checkIn();
-                         $.ajax({url:"vocab/" + this.viewset.vocab_index + "?field="+field+"&instance="+instance_id, 
+                         $.ajax({url: this.viewset.prefix + this.viewset.vocab_index + "?field="+field+"&instance="+instance_id, 
                               success: function(node) {
                                    objRef.addNode(node);
                                    hotelVocab.checkOut();
@@ -153,7 +153,7 @@ define(["utils/frontdesk", "define/viewelement"],
          reloadBrowser: function(category) {
              var objRef = this;
              var basenode = {child_ref: '', name: 'All'}; 
-             $.getJSON(VocabBrowser.prefix + "/" + this.viewset.vocab_index + '/browse/'+category, function(data){
+             $.getJSON(this.viewset.directory + '/' + category, function(data){
                  data.path.unshift(basenode);
                  objRef.choices.empty();
                  for (var index = 0; index < data.nodes.length; index++) {
@@ -312,12 +312,12 @@ define(["utils/frontdesk", "define/viewelement"],
                 '</div>',
             '</li>'
             ].join('')),
-        vocabBrowserTemplate : [
+        vocabBrowserTemplate : $.jqotec([
             '<div id="browser" class="container">',
 
                 '<div class="toolbar header tabs">',
-                    '<a id="showBrowse" class="tab" href="#browseTab">Browse <%=this.viewset.title%></a>',
-                    '<a class="tab" href="#searchTab">Search Diagnoses</a>',
+                    '<a id="showBrowse" class="tab" href="#browseTab">Browse <%=this.title%></a>',
+                    '<a class="tab" href="#searchTab">Search <%=this.title%></a>',
                 '</div>',
 
                 '<div class="content">',
@@ -328,7 +328,7 @@ define(["utils/frontdesk", "define/viewelement"],
                     '</div>',
 
                     '<div id="searchTab">',
-                        '<form method="get" action="/vocab/search/">',
+                        '<form method="get" action="<%=this.prefix%>    /search/">',
                             '<input type="text" class="search" id="browser-search" name="q" size="25" placeholder="Search terms..">',
                         '</form>',
                         '<div>',
@@ -336,14 +336,13 @@ define(["utils/frontdesk", "define/viewelement"],
                         '</div>',
                     '</div>',
 
-                    '<b>Patient diagnosed  with one or more of the following:</b>',
+                    '<b>Search <%=this.title%> using one or more of the following:</b>',
 
                     '<ul id="browser-selected" class="browser-content"></ul>',
 
                 '</div>',
             '</div>'
-        ].join(''),
-        prefix : "/cardiodb/vocab"
+        ].join(''))
     });
     return VocabBrowser;
 });
