@@ -46,8 +46,15 @@ def search_nodes(request, vocab_index=None):
     if not search_string:
         return HttpResponse(json.dumps([]), mimetype="application/json")
     
-    folders = DiagnosisCategory.objects.filter(name__icontains=search_string)
-    leaves = Diagnosis.objects.filter(name__icontains=search_string)
+    leaf_model = None
+    category_model = None
+    
+    criterion = Criterion.objects.get(id=vocab_index)
+    category_model = criterion.conceptfields.select_related('field').order_by('order')[2].field.model
+    leaf_model = criterion.conceptfields.select_related('field').order_by('order')[3].field.model
+    
+    folders = category_model.objects.filter(name__icontains=search_string)
+    leaves = leaf_model.objects.filter(name__icontains=search_string)
     
     folders = [  {
                     "path":[{"name":item.name, "id":item.id, "child_ref":item.id } for item in node.path_to_root()],
@@ -55,15 +62,15 @@ def search_nodes(request, vocab_index=None):
                     "id":node.id,
                     "child_ref": node.id,
                     "attributes": {}
-                 } for node in folders ]
-
+                 } for node in folders.all() ]
+    #Note: removed a sort order on diagnosisindex__level here, since it wasn't easy to find a simple alternative
     leaves =  [  { 
-                    "path":[{"name":item.name, "id":item.id, "child_ref":item.id } for item in node.categories.order_by("diagnosisindex__level")],
+                    "path":[{"name":item.name, "id":item.id, "child_ref":item.id } for item in node.categories.all()],
                     "name": node.name,
                     "id":node.id,
                     "child_ref": "",
                     "attributes": node.display_attributes()
-                 } for node in leaves ]
+                 } for node in leaves.all() ]
     
     folders.extend(leaves)
     
@@ -81,8 +88,9 @@ def retrieve_node(request, vocab_index=None):
     
     if isinstance(node, VocabularyItemAbstract):
         # Request is for a leaf node
+        #Note: removed a sort order on diagnosisindex__level here, since it wasn't easy to find a simple alternative
         value = { 
-            "path":[{"name":item.name, "id":item.id, "child_ref":item.id } for item in node.categories.order_by("diagnosisindex__level")],
+            "path":[{"name":item.name, "id":item.id, "child_ref":item.id } for item in node.categories],
             "name": node.name,
             "id":node.id,
             "child_ref": "",
