@@ -134,7 +134,7 @@ define(["utils/frontdesk", "define/viewelement"],
                      var field = key.split("_")[1];
                      $.each(new_ds[key], function(index,instance_id){
                          hotelVocab.checkIn();
-                         $.ajax({url: this.viewset.prefix + this.viewset.vocab_index + "?field="+field+"&instance="+instance_id, 
+                         $.ajax({url: objRef.viewset.prefix + objRef.viewset.vocab_index + "?field="+field+"&instance="+instance_id, 
                               success: function(node) {
                                    objRef.addNode(node);
                                    hotelVocab.checkOut();
