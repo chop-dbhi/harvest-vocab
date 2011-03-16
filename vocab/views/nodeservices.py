@@ -90,11 +90,11 @@ def retrieve_node(request, vocab_index=None):
         # Request is for a leaf node
         #Note: removed a sort order on diagnosisindex__level here, since it wasn't easy to find a simple alternative
         value = { 
-            "path":[{"name":item.name, "id":item.id, "child_ref":item.id } for item in node.categories],
+            "path":[{"name":item.name, "id":item.id, "child_ref":item.id } for item in node.categories.all()],
             "name": node.name,
             "id":node.id,
             "child_ref": "",
-            "attributes": node.display_attributes
+            "attributes": node.display_attributes()
         }        
     else:
         # request is for a category node
