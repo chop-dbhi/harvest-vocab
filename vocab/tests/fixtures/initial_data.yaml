@@ -1,0 +1,55 @@
+- model: tests.ticket
+  pk: 1
+  fields:
+    name: Fix IE positioning
+    description: null
+    parent: null
+    terminal: false
+
+- model: tests.ticket
+  pk: 2
+  fields:
+    name: Gallery images must be stacked on one another
+    description: Add absolute positioning to elements, don't float
+    parent: 1
+    terminal: true
+
+- model: tests.ticket
+  pk: 3
+  fields:
+    name: Implement automated systems
+    description: null
+    parent: null
+    terminal: false
+
+- model: tests.ticket
+  pk: 4
+  fields:
+    name: Write deployment script
+    description: Use fabric to ease remote deployments
+    parent: 3
+    terminal: false
+
+- model: tests.ticket
+  pk: 5
+  fields:
+    name: Write deployment configurations for various environments
+    description: Use fabric to ease remote deployments
+    parent: 4
+    terminal: false
+
+- model: tests.ticket
+  pk: 6
+  fields:
+    name: Write cron jobs for backing backing up various databases/repositories
+    description: We have VMWare, but we should backup our databases and repositories to the SAN
+    parent: 3
+    terminal: true
+
+- model: tests.ticket
+  pk: 7
+  fields:
+    name: Write configuration for production application server
+    description: null
+    parent: 5
+    terminal: true
