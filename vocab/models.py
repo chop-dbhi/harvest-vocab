@@ -30,14 +30,18 @@ class AbstractItem(models.Model):
     class Meta(object):
         abstract = True
 
-    def ancestors(self):
+    def ancestors(self, include_self=False):
         "Returns a ``QuerySet`` containing all ancestors of this item."
         ids = self.item_indexes.exclude(parent=None).values_list('parent', flat=True)
+        if include_self:
+            ids += [self.pk]
         return self.__class__.objects.filter(pk__in=ids)
 
-    def descendents(self):
+    def descendents(self, include_self=False):
         "Returns a ``QuerySet`` containing all descendents of this item."
         ids = self.parent_indexes.values_list('item', flat=True)
+        if include_self:
+            ids = [self.pk] + ids
         return self.__class__.objects.filter(pk__in=ids)
 
 
