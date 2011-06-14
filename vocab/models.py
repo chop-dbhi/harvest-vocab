@@ -21,7 +21,6 @@ class AbstractItem(models.Model):
 
     search_fields = ('name',)
 
-    name = models.CharField(max_length=250)
     terminal = models.BooleanField(default=False)
 
     def __unicode__(self):
