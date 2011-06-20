@@ -18,13 +18,7 @@ from vocab.managers import ItemIndexManager
 
 class AbstractItem(models.Model):
     "The foreign key or many-to-many field to parent items must be defined."
-
-    search_fields = ('name',)
-
     terminal = models.BooleanField(default=False)
-
-    def __unicode__(self):
-        return u'%s' % self.name
 
     class Meta(object):
         abstract = True
@@ -33,14 +27,14 @@ class AbstractItem(models.Model):
         "Returns a ``QuerySet`` containing all ancestors of this item."
         ids = self.item_indexes.exclude(parent=None).values_list('parent', flat=True)
         if include_self:
-            ids += [self.pk]
+            ids = list(ids) + [self.pk]
         return self.__class__.objects.filter(pk__in=ids)
 
     def descendents(self, include_self=False):
         "Returns a ``QuerySet`` containing all descendents of this item."
         ids = self.parent_indexes.values_list('item', flat=True)
         if include_self:
-            ids = [self.pk] + ids
+            ids = [self.pk] + list(ids)
         return self.__class__.objects.filter(pk__in=ids)
 
 
