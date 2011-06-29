@@ -55,7 +55,7 @@ define(["cilantro/define/viewelement"],
                     
             function linkItem(evt) {
                 var item = $(this);
-                var li = item.parent();
+                var li = item.parents('li');
 
                 // switch to the browse tab
                 tabs.tabs('toggle', 0);
@@ -123,7 +123,7 @@ define(["cilantro/define/viewelement"],
 
                     // no results
                     if (!resp.length) {
-                        results.html("<div>No matches.</div>");
+                        results.html('<li class="empty">No results found.</li>');
                         return;
                     }
 
@@ -303,7 +303,15 @@ define(["cilantro/define/viewelement"],
         searchResultsTemplate : $.jqotec([
             '<li data-id="<%= this.id %>" <% if (!this.terminal) { %>class="folder"<% } %>>',
                 '<button class="button-add">+</button>',
-                '<a href="<%= this.parent.uri %>"><%= this.name %></a>',
+                '<span><a href="<%= this.parent.uri %>"><%= this.name %></a>',
+                    '<% if (this.attrs) { %>',
+                        '<br><small style="color: #999">',
+                            '<% for (var k in this.attrs) { %>',
+                                '<%= k %>: <%= this.attrs[k] %>',
+                            '<% } %>',
+                        '</small>',
+                    '<% } %>',
+                '</span>', 
             '</li>'].join('')),
 
         selectedTemplate : $.jqotec([
@@ -329,11 +337,12 @@ define(["cilantro/define/viewelement"],
 
                     '<div id="search-tab-<%= this.pk %>">',
                         '<form method="get" action="<%= this.directory %>">',
-                            '<input type="text" class="search" name="q" placeholder="Keywords...">',
+                            '<input type="text" class="search" name="q" placeholder="Search...">',
                             ' <em>Note: only the first 100 results are displayed</em>',
                         '</form>',
                         '<div>',
-                            '<ul class="list results"></ul>',
+                            '<ul class="list results"><li class="start">Enter search terms above.',
+                                ' Results can be clicked to go to their location in the Browse tab.</li></ul>',
                         '</div>',
                     '</div>',
 

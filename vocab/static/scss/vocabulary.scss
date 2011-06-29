@@ -127,4 +127,16 @@
         }
     }
 
+    .results {
+        > .start, .empty {
+            border: none !important;
+            background-color: #eee;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #aaa;
+        }
+    }
+
 }
