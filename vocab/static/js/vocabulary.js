@@ -1,347 +1,352 @@
-define(["utils/frontdesk", "define/viewelement"],
-    function(FrontDesk, ViewElement) {
-    // browser refers to the div on screen where the concept will be displayed 
+define(["cilantro/define/viewelement"],
+    function(ViewElement) {
+
+
+    // browser refers to the div on screen where the concept will be displayed
     var VocabBrowser = ViewElement.extend({
-         constructor: function(viewset, concept_pk){
-             var ds = this.ds =  {};
-             var leaf = this.leaf = null;
-             var folder = this.folder = null;
-             this.base(viewset, concept_pk);
-         },
-         render: function(){
-              var objRef = this;
-              var dom = this.dom = $($.jqote(VocabBrowser.vocabBrowserTemplate, this.viewset));
-              var tabs = $('.tabs', dom);
-              var choices = this.choices = $('#browser-choices', dom);
-              var selected = this.selected = $('#browser-selected', dom);
-              var search = this.search = $('#browser-search', dom);
-              var results = this.results = $('#browser-results', dom);
-              var breadcrumbs = this.breadcrumbs = $('#browser-breadcrumbs', dom);
-             
-              // enable tabs, we use a very barebones tabs implementation
-              // the core code only adds the appropriate classes to selected
-              // and non-selected tabs, represented by <a> elements.
-             
-              tabs.tabs(false, function (evt, $tab){
-                  objRef.refreshBrowser();
-                  var $siblings = $tab.siblings('.tab');
-                  dom.find($tab.attr('hash')).show();
-                  $siblings.each(function(index, neighbor){
-                      dom.find($(neighbor).attr('hash')).hide();
-                  });
-              });
-              
-              // breadcrumb navigation
-              breadcrumbs.delegate('a', 'click', function(){
-                  objRef.reloadBrowser($(this).data("catid"));
-                  return false;
-              });
-              
-              // add item from available choices
-              choices.delegate('button', 'click', function(evt) {
-                  var target = $(this);
-                  var li = target.parent();
-              
-                  target.attr("disabled", "disabled");
-              
-                  objRef.addNode(li.data("node"));
-                  li.addClass("added");
-              
-                  return false;
-              });
-              
-              // add item from search results
-              results.delegate('button', 'click', function(evt) {
-                  var target = $(this);
-                  var li = target.parent();
-              
-                  target.attr("disabled", "disabled");
-              
-                  objRef.addNode(li.data("node"));
-                  li.addClass("added");
-              
-                  return false;
-              });
-              
-              // descend in hierarchy
-              choices.delegate('.folder', 'click', function() {
-                  objRef.reloadBrowser($(this).data("node").child_ref);
-                  return false;
-              });
-              
-              // remove item from selected items
-              selected.delegate('button', 'click', function() {
-                  var target = $(this);
-                  var li = target.parent();
-                  objRef.removeNode(li.data("node"));
-                  li.remove();
-                  return false;
-              });
-              
-              this.execute();
-         },
-         execute: function(){
-             var leaf = this.leaf = this.concept_pk+"_"+this.viewset.leaf;
-             var folder = this.folder = this.concept_pk+"_"+this.viewset.folder;
-             var results = this.results;
-             var ds = this.ds;
-             ds[leaf] = [];
-             ds[folder] = [];
-             
-             // Setup the browser
-             this.reloadBrowser('');
 
-             // Setup the search 
-             this.search.autocomplete2({
-                 success: function(query, resp) {
-                     results.empty();
-                     resp = (typeof resp == "string") || (resp instanceof String) ? $.parseJSON(resp) : resp; 
-                     $.each(resp, function(index, value){
-                         if (value.id === -1) {
-                               results.html("<div>No matches.</div>");
-                               return;
-                         }
-
-                         var $li = $($.jqote(VocabBrowser.searchResultsTemplate, value));
-                         $li.data("node", value);                        
-
-                         if (value.child_ref) {
-                             $li.addClass('folder');
-
-                             if ($.inArray(value.id, ds[folder]) != -1)
-                                 $li.addClass("added");
-                         } else {
-                             if ($.inArray(value.id,ds[leaf]) != -1)
-                                 $li.addClass("added");
-                         }
-                         results.append($li);
-                     });                 
-                 }
-             });
-         },
-         updateDS: function(evt, new_ds) {
-             var objRef = this;
-             var operator = /operator$/;
-             var hotelVocab = new FrontDesk();
-             hotelVocab.onEmpty($.proxy(this.refreshBrowser,this));
-
-             if (!$.isEmptyObject(new_ds)){
-                 // Add items
-                 for (key in new_ds){
-                     // ignore the operator
-                     if (operator.test(key)) continue;
-                     // concept doesn't matter here
-                     var field = key.split("_")[1];
-                     $.each(new_ds[key], function(index,instance_id){
-                         hotelVocab.checkIn();
-                         $.ajax({url: objRef.viewset.prefix +"/"+ objRef.viewset.vocab_index + "?field="+field+"&instance="+instance_id, 
-                              success: function(node) {
-                                   objRef.addNode(node);
-                                   hotelVocab.checkOut();
-                              },
-                              dataType:"json",
-                              error:function(){
-                                   hotelVocab.checkOut();
-                              }
-                         });
-                     });
-                 }   
-             }
-         },
-         updateElement: function(evt, element) {},
-         elementChanged: function(evt,element) {},
-         reloadBrowser: function(category) {
-             var objRef = this;
-             var basenode = {child_ref: '', name: 'All'}; 
-             $.getJSON(this.viewset.directory + '/' + category, function(data){
-                 data.path.unshift(basenode);
-                 objRef.choices.empty();
-                 for (var index = 0; index < data.nodes.length; index++) {
-                     var $li = $($.jqote(VocabBrowser.browseTemplate,data.nodes[index]));
-                     $li.data("node",data.nodes[index]);
-
-                     // Check to see if the item has been selected
-                     if (data.nodes[index].child_ref){
-                         if ($.inArray(data.nodes[index].id, objRef.ds[objRef.folder])!=-1){
-                             $li.addClass("added");
-                         }
-                     } else {
-                         if ($.inArray(data.nodes[index].id, objRef.ds[objRef.leaf])!=-1){
-                             $li.addClass("added");
-                         }
-                     }
-                     objRef.choices.append($li);                   
-                 }
-                 objRef.breadcrumbs.empty().html($.jqote(VocabBrowser.breadcrumbsTemplate,data));
-             }); 
-         },
-         addNode : function(node){
-             var isFolder = !!node.child_ref;
-             var ds = this.ds;
-             var leaf = this.leaf;
-             var folder = this.folder;
-             
-             var $new_node = $('<li><button class="button-remove">-</button>'+node.name+'</li>');
-             
-             $new_node.data('node', node);
-             if (isFolder){
-                 if ($.inArray(node.id,this.ds[folder])!=-1){
-                     return;
-                 }
-                 $new_node.addClass('folder');
-                 this.selected.prepend($new_node);
-                 ds[folder].unshift(node.id);
-                 this.dom.trigger("ElementChangedEvent", [{name:folder, value:ds[folder]}]);
-             }else{
-                 if ($.inArray(node.id, ds[leaf])!=-1){
-                       return;
-                 }
-                 this.selected.prepend($new_node);
-                 ds[leaf].unshift(node.id);
-                 this.dom.trigger("ElementChangedEvent", [{name:leaf, value:ds[leaf]}]);
-             }   
+        constructor: function(viewset, concept_pk) {
+            this.base(viewset, concept_pk);
+            this.ds =  [];
         },
-        // Remove a previously selected node..
-        removeNode : function(node){
-            var index;
-            var ds = this.ds;
-            var leaf = this.leaf;
-            var folder = this.folder;
-            var dom = this.dom;
-            
-            if (node.child_ref){
-                index = $.inArray(node.id, ds[folder]);
-                ds[folder].splice(index,1);
-                dom.trigger("ElementChangedEvent", [{name:folder, value:ds[folder].length > 0 ? ds[folder]:undefined}]);
-            }else{
-                index = $.inArray(node.id, this.ds[this.leaf]);
-                ds[this.leaf].splice(index,1);
-                dom.trigger("ElementChangedEvent", [{name:leaf, value:ds[leaf].length > 0 ? ds[leaf]:undefined}]);
+
+        render: function(){
+            var objRef = this;
+
+            var pk = this.pk = this.concept_pk + '_' + this.viewset.pk;
+            var dom = this.dom = $($.jqote(VocabBrowser.vocabBrowserTemplate, this.viewset));
+            var tabs = $('.tabs', dom);
+            var choices = this.choices = $('.choices', dom);
+            var selected = this.selected = $('.selected', dom);
+            var search = this.search = $('.search', dom);
+            var results = this.results = $('.results', dom);
+            var breadcrumbs = this.breadcrumbs = $('.breadcrumbs', dom);
+
+            // enable tabs, we use a very barebones tabs implementation
+            // the core code only adds the appropriate classes to selected
+            // and non-selected tabs, represented by <a> elements.
+            tabs.tabs(false, function (evt, tab) {
+                var siblings = tabs.find('.tab')
+                // hide everything
+                siblings.each(function(i, o) {
+                    $(o.hash, objRef.dom).hide();
+                });
+
+                // get the current on and show it
+                $(tab.attr('hash'), objRef.dom).show();
+            });
+
+            // breadcrumb navigation
+            breadcrumbs.delegate('a', 'click', function(){
+                objRef.reloadBrowser($(this).attr('href'));
+                return false;
+            });
+
+            function addItem(evt) {
+                var target = $(this).parent();
+                objRef.addNode(target.data());
+                return false;
             }
+
+            // add item from available choices
+            choices.delegate('button', 'click', addItem);
+            results.delegate('button', 'click', addItem);
+
+                    
+            function linkItem(evt) {
+                var item = $(this);
+                var li = item.parent();
+
+                // switch to the browse tab
+                tabs.tabs('toggle', 0);
+
+                // reload the browser with the item's url
+                objRef.reloadBrowser(item.attr('href'), function() {
+
+                    // get the corresponding list item in the browser
+                    var target = $('[data-id='+li.data('id')+']', objRef.choices);
+
+                    // scroll down to the referenced item since this page
+                    // represents this item's parent.
+                    objRef.choices.scrollTo(target, 500, {
+                        offset: -150,
+                        onAfter: function() {
+                            // add highlight effect to ensure the user sees the
+                            // location of the item
+                            target.effect('highlight', null, 2000); 
+                        }
+                    });
+
+                });
+                return false;
+            };
+
+            // handler for clicking on search results, they take the user
+            // to the location of the item in the browser since to provide
+            // more context
+            results.delegate('a', 'click', linkItem);
+            selected.delegate('a', 'click', linkItem);
+
+
+            // descend in hierarchy
+            choices.delegate('.folder', 'click', function() {
+                objRef.reloadBrowser($(this).data('uri'));
+                return false;
+            });
+
+            // remove item from selected items
+            selected.delegate('button', 'click', function() {
+                var target = $(this);
+                var li = target.parent();
+                objRef.removeNode(li.data());
+                li.remove();
+                return false;
+            });
+
+            this.execute();
+        },
+
+        execute: function(){
+            var objRef = this;
+            var results = this.results;
+
+            // Setup the browser
+            this.reloadBrowser();
+
+            // Setup the search
+            this.search.autocomplete2({
+                start: function() {
+                    results.block();
+                },
+                success: function(query, resp) {
+                    results.empty();
+
+                    // no results
+                    if (!resp.length) {
+                        results.html("<div>No matches.</div>");
+                        return;
+                    }
+
+                    // show results
+                    $.each(resp, function(i, o){
+                        var li = objRef.renderListElement(o, VocabBrowser.searchResultsTemplate);
+                        results.append(li);
+                    });
+
+                    objRef.refreshBrowser();
+                    results.unblock();
+                }
+            });
+        },
+
+        updateDS: function(evt, new_ds) {
+            var objRef = this;
+            var operator = /operator$/;
+            this.refreshBrowser();
+
+            if (!$.isEmptyObject(new_ds)){
+                // Add items
+                for (key in new_ds){
+
+                    // ignore the operator
+                    if (operator.test(key)) continue;
+
+                    $.each(new_ds[key], function(index, instance_id){
+                        $.ajax({
+                            url: objRef.viewset.directory + instance_id + '/',
+                            success: function(node) {
+                                objRef.addNode(node);
+                            },
+                        });
+                    });
+                }
+            }
+        },
+
+        updateElement: function(evt, element) {},
+
+        elementChanged: function(evt, element) {},
+
+        reloadBrowser: function(url, callback) {
+            url = url || this.viewset.directory;
+            callback = callback || function() {};
+
+            var objRef = this;
+            var breadcrumbs = [{name: 'All', uri: this.viewset.directory}];
+
+            this.choices.block();
+            $.getJSON(url, function(data){
+                objRef.choices.empty();
+                objRef.breadcrumbs.empty()
+
+                if (!$.isArray(data)) {
+                    nodes = data.children
+                    breadcrumbs = breadcrumbs.concat(data.ancestors.length ? data.ancestors : []);
+                    breadcrumbs.push({name: data.name});
+                } else {
+                    nodes = data;
+                }
+
+                for (var li, n, i = 0; i < nodes.length; i++) {
+                    n = nodes[i];
+                    li = objRef.renderListElement(n, VocabBrowser.browseTemplate);
+                    objRef.choices.append(li);
+                }
+
+                // update breadcrumbs
+                var tmpl = $.jqote(VocabBrowser.breadcrumbsTemplate, {breadcrumbs: breadcrumbs});
+                objRef.breadcrumbs.html(tmpl);
+
+                // ensure the new list of items reflect the current state
+                objRef.refreshBrowser();
+
+                // execute caller-defined callback
+                callback();
+
+                objRef.choices.unblock();
+
+            });
+        },
+
+        renderListElement: function(node, template) {
+            // always ensure there is a reference to the parent node
+            if (!node.parent) {
+                if (!node.ancestors || node.ancestors.length == 0)
+                    node.parent = {uri: this.viewset.directory}
+                else
+                    node.parent = {uri: node.ancestors[0].uri}
+            }
+
+            var li = $($.jqote(template, node));
+            // bind data locally to element since this may be used to render
+            // another template
+            li.data(node);
+
+            return li;
+
+        },
+
+        addNode : function(node) {
+            // ensure this is not redundant
+            if (this.ds.indexOf(node.id) < 0) {
+                this.ds.push(node.id);
+                var li = this.renderListElement(node, VocabBrowser.selectedTemplate);
+                this.selected.append(li);
+            }
+
+            // ensure everything is synced up
+            this.dom.trigger("ElementChangedEvent", [{name: this.pk, value: this.ds}]);
             this.refreshBrowser();
         },
-        
+
+        // Remove a previously selected node..
+        removeNode : function(node) {
+            // remove this ID from the list
+            var i;
+            if ((i = this.ds.indexOf(node.id)) > -1)
+                this.ds.splice(i, 1);
+
+            this.dom.trigger("ElementChangedEvent", [{name: this.pk,
+                value: this.ds.length > 0 ? this.ds : undefined}]);
+            this.refreshBrowser();
+        },
+
         // Make sure the currently displayed nodes are correctly colored
         // as to whether they are selected for the query.
-        refreshBrowser : function(){
-            var ds = this.ds;
-            var leaf = this.leaf;
-            var folder = this.folder;
-            
+        refreshBrowser : function() {
             $('li', this.choices).removeClass("added");
             $('button', this.choices).attr("disabled", false);
 
-            $('li', this.results).removeClass('added');
-            $('button', this.results).attr('disabled', false); 
+            $('li', this.results).removeClass("added");
+            $('button', this.results).attr("disabled", false);
 
-            $('li', this.choices).add('li', this.results).each(function(index, element) {
-                element = $(element);
-                if (element.data('node').child_ref){
-                    if ($.inArray(element.data('node').id, ds[folder]) !=-1){
-                        element.addClass("added");
-                        element.find("button").attr("disabled","disabled");
-                    } 
-                } else {
-                    if ($.inArray(element.data('node').id, ds[leaf]) !=-1){
-                        element.addClass("added");
-                        element.find("button").attr("disabled","disabled");
-                   }
-                }
-            });
+            for (var id, li, i = this.ds.length; i--; ) {
+                id = this.ds[i];
+
+                $('li[data-id='+id+']', this.choices)
+                    .addClass('added')
+                    .find('button').attr('disabled', true);
+
+                $('li[data-id='+id+']', this.results)
+                    .addClass('added')
+                    .find('button').attr('disabled', true);
+            }
+
         }
     },
+
     {
-        breadcrumbsTemplate : $.jqotec([ 
-            '<% for (var index = 0; index < this.path.length; index++) {%>',
-                '<% if (index === (this.path.length-1)) {%>',
-                    '&raquo; <b><%=this.path[index].name%></b>',
+        breadcrumbsTemplate : $.jqotec([
+            '<% for (var b, i = 0; i < this.breadcrumbs.length; i++) {%>',
+                '<% b = this.breadcrumbs[i]; %>',
+                '<% if (i === (this.breadcrumbs.length-1)) {%>',
+                    '<h3 title="<%= b.name %>"><%= b.name %></h3>',
                 '<% } else { %>',
-                    '&raquo; <a href="#" data-catid="<%=this.path[index].child_ref%>"><%=this.path[index].name%></a>',
+                    '&raquo; <a href="<%= b.uri %>" title="<%= b.name %>"><%= b.name %></a>',
                 '<% } %>',
             '<% } %>'].join('')),
+
         browseTemplate : $.jqotec([
-            '<% if (this.child_ref) { %>',
-                '<li class="folder">',
-                    '<button class="button-add">+</button>',
-                    '<span><%= this.name %></span>',
-                '</li>',
-            '<% } else { %>',
-                '<li class="leaf">',
-                    '<button class="button-add">+</button>',
-                    '<div>',
-                        '<span><%= this.name %></span>',
-                        '<div class="meta">',
-                            '<% for (var attr in this.attributes) { %>',
-                                '<% if (this.attributes[attr] != null) {%>',
-                                ' <%= attr %>: <%= this.attributes[attr]%>',
-                                '<% } %>',
+            '<li data-id="<%= this.id %>" data-uri="<%= this.uri %>" <% if (!this.terminal) { %>class="folder"<% } %>>',
+                '<button class="button-add">+</button>',
+                '<span><%= this.name %>',
+                    '<% if (this.attrs) { %>',
+                        '<br><small style="color: #999">',
+                            '<% for (var k in this.attrs) { %>',
+                                '<%= k %>: <%= this.attrs[k] %>',
                             '<% } %>',
-                        '</div>',
-                    '</div>',
-                '</li>',
-            '<% } %>'].join('')),
+                        '</small>',
+                    '<% } %>',
+                '</span>',
+            '</li>'].join('')),
+
         searchResultsTemplate : $.jqotec([
-            '<li class="search-item">',
-                '<% if (this.child_ref) {%>',
-                    '<button class="button-add folder" id="folder<%=this.id%>">+</button>',
-                '<% } else {%>',
-                    '<button class="button-add leaf" id="leaf<%=this.id%>">+</button>',
-                '<% } %>',
+            '<li data-id="<%= this.id %>" <% if (!this.terminal) { %>class="folder"<% } %>>',
+                '<button class="button-add">+</button>',
+                '<a href="<%= this.parent.uri %>"><%= this.name %></a>',
+            '</li>'].join('')),
+
+        selectedTemplate : $.jqotec([
+            '<li data-id="<%= this.id %>" <% if (!this.terminal) { %>class="folder"<% } %>>',
+                '<button class="button-remove">-</button>',
+                '<a href="<%= this.parent.uri %>"><%= this.name %></a>',
+            '</li>'].join('')),
+
+        vocabBrowserTemplate : $.jqotec([
+            '<div class="browser">',
+
+                '<div class="tabs">',
+                    '<a class="tab" href="#browse-tab-<%= this.pk %>">Browse <%= this.title %></a>',
+                    '<a class="tab" href="#search-tab-<%= this.pk %>">Search <%= this.title %></a>',
+                '</div>',
 
                 '<div>',
-                    '<span>',
-                        '<%= this.name %>',
-                    '</span>',
-                    '<div class="meta">',
-                        '<% if (this.attributes.icd9) { %>',
-                            'ICD-9 : <%= this.attributes.icd9 %>',
-                        '<% } %>',
-                        '<% if (this.attributes.clinibase) { %>',
-                            ' Clinibase ID : <%= this.attributes.clinibase %>',
-                        '<% } %>',
 
-                        '<div class="node_path">',
-                            '<% for (index = 0; index < this.path.length; index++){ %>',
-                                '<div pathid="<%=index%>" class="path_node" style="display:inline;"><%=this.path[index].name%></div>',
-                                '<% if (index != this.path.length -1){%> &raquo <%}%>',
-                            '<% } %>',
-                        '</div>',
-
-                    '</div>',
-                '</div>',
-            '</li>'
-            ].join('')),
-        vocabBrowserTemplate : $.jqotec([
-            '<div id="browser" class="container">',
-
-                '<div class="toolbar header tabs">',
-                    '<a id="showBrowse" class="tab" href="#browseTab">Browse <%=this.title%></a>',
-                    '<a class="tab" href="#searchTab">Search <%=this.title%></a>',
-                '</div>',
-
-                '<div class="content">',
-
-                    '<div id="browseTab">',
-                        '<div id="browser-breadcrumbs"></div>',
-                        '<ul id="browser-choices" class="browser-content"></ul>',
+                    '<div id="browse-tab-<%= this.pk %>">',
+                        '<div class="breadcrumbs"></div>',
+                        '<ul class="list choices"></ul>',
                     '</div>',
 
-                    '<div id="searchTab">',
-                        '<form method="get" action="<%=this.prefix%>/<%=this.vocab_index%>/search/">',
-                            '<input type="text" class="search" id="browser-search" name="q" size="25" placeholder="Search terms..">',
+                    '<div id="search-tab-<%= this.pk %>">',
+                        '<form method="get" action="<%= this.directory %>">',
+                            '<input type="text" class="search" name="q" placeholder="Keywords...">',
+                            ' <em>Note: only the first 100 results are displayed</em>',
                         '</form>',
                         '<div>',
-                            '<ul id="browser-results" class="browser-content"></ul>',
+                            '<ul class="list results"></ul>',
                         '</div>',
                     '</div>',
 
-                    '<b>Search <%=this.title%> using one or more of the following:</b>',
-
-                    '<ul id="browser-selected" class="browser-content"></ul>',
+                    '<h2>Selected <%= this.title %></h2>',
+                    '<small>Note: this query is currently limited to getting results having ',
+                    'at least ONE of these <%= this.title.toLowerCase() %>.</small>',
+                    '<ul class="list selected"></ul>',
 
                 '</div>',
             '</div>'
         ].join(''))
     });
+
     return VocabBrowser;
 });
+

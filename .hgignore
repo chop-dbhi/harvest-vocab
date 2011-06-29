@@ -3,6 +3,7 @@ syntax: glob
 .DS_Store
 local.py
 local_settings.py
+.sass-cache
 
 syntax: regexp
 ^docs/_build
