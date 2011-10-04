@@ -54,6 +54,6 @@ this way:
 ```python
 # either the item has this code or one of it's parents has this code
 condition = Q(item__code='367') | Q(parent__code='367')
-item_ids = DiagnosisIndex.objects.filter(condition).values_list('item', flat=True)
+item_ids = DiagnosisIndex.objects.filter(condition).values_list('item__id', flat=True)
 diagnoses = Diagnosis.objects.filter(id__in=item_ids)
 ```
