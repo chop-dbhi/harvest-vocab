@@ -5,6 +5,7 @@ from vocab.models import AbstractItem, AbstractItemIndex
 class Ticket(AbstractItem):
     search_fields = ('name', 'description')
 
+    name = models.CharField(max_length=50)
     description = models.TextField(null=True)
     parent = models.ForeignKey('self', null=True, related_name='children')
 
