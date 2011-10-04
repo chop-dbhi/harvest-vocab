@@ -74,7 +74,7 @@ version = __import__(BASE_PACKAGE).get_version()
 
 setup(
     version = version,
-    name = 'django-vocab',
+    name = 'harvest-vocab',
     author = 'Jeff Miller, Michael Italia, Byron Ruth',
     author_email = 'ruthb@email.chop.edu',
     description = 'A browser for a hierarchical controlled vocabulary',
