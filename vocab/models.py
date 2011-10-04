@@ -1,18 +1,3 @@
-"""
-Example usage::
-
-    class Procedure(AbstractItem):
-        code = models.CharField(max_length=10)
-        parent = models.ForeignKey('self', related_name='children')
-
-
-    class ProcedureIndex(AbstractItemIndex):
-        item = models.ForeignKey(Procedure, related_name='item_index')
-        parent = models.ForeignKey(Procedure, related_name='parent_index')
-
-
-"""
-
 from django.db import models
 from vocab.managers import ItemIndexManager
 
