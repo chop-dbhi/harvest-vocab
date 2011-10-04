@@ -16,9 +16,9 @@ class Diagnosis(AbstractItem):
 ```
 
 ICD9 codes are hierachical therefore when I ask the questions, _"Give me all
-the patients who have a diagnosis in ICD9 367 (_Disorders of
-refraction and accommodation_)", then this should not only query 367, but all
-descendent diagnoses as well (which includes another 2 levels).
+the patients who have a diagnosis in ICD9 367 (Disorders of refraction and
+accommodation)", then this should not only query 367, but all descendent
+diagnoses as well (which includes another 2 levels).
 
 This kind of query becomes difficult to write since you only have access to
 the direct parent of the a particular diagnosis, thus the query would look like
