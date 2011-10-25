@@ -33,7 +33,7 @@ define(["cilantro/define/viewelement"],
                 });
 
                 // get the current on and show it
-                $(tab.attr('hash'), objRef.dom).show();
+                $(tab.prop('hash'), objRef.dom).show();
             });
 
             // breadcrumb navigation
