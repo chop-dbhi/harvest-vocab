@@ -3,6 +3,7 @@ from django.core.urlresolvers import reverse
 from avocado.criteria.viewset import AbstractViewSet
 
 class VocabBrowserViewSet(AbstractViewSet):
+    search_only = False
 
     def browser(self, concept, cfields, *args, **kwargs):
         STATIC_URL =  settings.STATIC_URL
@@ -21,8 +22,8 @@ class VocabBrowserViewSet(AbstractViewSet):
                 'title': concept.name,
                 'type':'custom',
                 'directory': url,
+                'search_only': self.search_only,
                 'js'  : STATIC_URL + 'vocab/js/vocabulary.js',
                 'css' : STATIC_URL + 'vocab/css/vocabulary.css',
             }],
-
         }

@@ -10,7 +10,7 @@ define(["cilantro/define/viewelement"],
             this.ds =  [];
         },
 
-        render: function(){
+        render: function() {
             var objRef = this;
 
             var pk = this.pk = this.concept_pk + '_' + this.viewset.pk;
@@ -217,6 +217,8 @@ define(["cilantro/define/viewelement"],
                     node.parent = {uri: node.ancestors[0].uri}
             }
 
+            node.search_only = this.viewset.search_only;
+
             var li = $($.jqote(template, node));
             // bind data locally to element since this may be used to render
             // another template
@@ -303,7 +305,12 @@ define(["cilantro/define/viewelement"],
         searchResultsTemplate : $.jqotec([
             '<li data-id="<%= this.id %>" <% if (!this.terminal) { %>class="folder"<% } %>>',
                 '<button class="button-add">+</button>',
-                '<span><a href="<%= this.parent.uri %>"><%= this.name %></a>',
+                '<span>',
+                    '<% if (this.search_only) { %>',
+                        '<span><%= this.name %></span>',
+                    '<% } else { %>',
+                        '<a href="<%= this.parent.uri %>"><%= this.name %></a>',
+                    '<% } %>',
                     '<% if (this.attrs) { %>',
                         '<br><small style="color: #999">',
                             '<% for (var k in this.attrs) { %>',
@@ -317,23 +324,30 @@ define(["cilantro/define/viewelement"],
         selectedTemplate : $.jqotec([
             '<li data-id="<%= this.id %>" <% if (!this.terminal) { %>class="folder"<% } %>>',
                 '<button class="button-remove">-</button>',
-                '<a href="<%= this.parent.uri %>"><%= this.name %></a>',
+                '<% if (this.search_only) { %>',
+                    '<span><%= this.name %></span>',
+                '<% } else { %>',
+                    '<a href="<%= this.parent.uri %>"><%= this.name %></a>',
+                '<% } %>',
             '</li>'].join('')),
 
         vocabBrowserTemplate : $.jqotec([
             '<div class="browser">',
 
-                '<div class="tabs">',
-                    '<a class="tab" href="#browse-tab-<%= this.pk %>">Browse <%= this.title %></a>',
-                    '<a class="tab" href="#search-tab-<%= this.pk %>">Search <%= this.title %></a>',
-                '</div>',
+                '<% if (!this.search_only) { %>',
+                    '<div class="tabs">',
+                        '<a class="tab" href="#browse-tab-<%= this.pk %>">Browse <%= this.title %></a>',
+                        '<a class="tab" href="#search-tab-<%= this.pk %>">Search <%= this.title %></a>',
+                    '</div>',
+                '<% } %>',
 
                 '<div>',
-
-                    '<div id="browse-tab-<%= this.pk %>">',
-                        '<div class="breadcrumbs"></div>',
-                        '<ul class="list choices"></ul>',
-                    '</div>',
+                    '<% if (!this.search_only) { %>',
+                        '<div id="browse-tab-<%= this.pk %>">',
+                            '<div class="breadcrumbs"></div>',
+                            '<ul class="list choices"></ul>',
+                        '</div>',
+                    '<% } %>',
 
                     '<div id="search-tab-<%= this.pk %>">',
                         '<form method="get" action="<%= this.directory %>">',
