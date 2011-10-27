@@ -14,6 +14,7 @@ class ItemResource(resources.Resource):
 class ItemResourceCollection(resources.Resource):
     search_enabled = True
     max_results = 100
+    order_by = ('name',)
 
     def GET(self, request):
         queryset = self.queryset(request)
@@ -27,10 +28,10 @@ class ItemResourceCollection(resources.Resource):
             for field in getattr(self.model, 'search_fields', ()):
                 query = query | Q(**{'%s__icontains' % field: q})
 
-            queryset = queryset.order_by('-parent', 'name')
+            queryset = queryset.order_by('-parent', *self.order_by)
 
             return queryset.filter(query)[:self.max_results]
 
         # get all root items
-        return queryset.filter(parent=None).order_by('name')
+        return queryset.filter(parent=None).order_by(*self.order_by)
 
