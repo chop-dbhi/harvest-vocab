@@ -3,7 +3,7 @@ from vocab.managers import ItemIndexManager
 
 class AbstractItem(models.Model):
     "The foreign key or many-to-many field to parent items must be defined."
-    terminal = models.BooleanField(default=False)
+    terminal = models.NullBooleanField()
 
     class Meta(object):
         abstract = True
