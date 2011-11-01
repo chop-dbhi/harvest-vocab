@@ -3,6 +3,14 @@ from django.core.urlresolvers import reverse
 from avocado.criteria.viewset import AbstractViewSet
 
 class VocabBrowserViewSet(AbstractViewSet):
+    """Simple viewset for rendering a vocabulary _browser_.
+
+    ``url_reversed`` must be defined either as a standalone string
+    or a tuple of _reverse_-able arguments (name, args, kwargs).
+
+    If ``search_only`` is True, no hierarchy browser will be displayed.
+    """
+    url_reversed = ''
     search_only = False
 
     def browser(self, concept, cfields, *args, **kwargs):

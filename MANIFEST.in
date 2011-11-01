@@ -1,0 +1,5 @@
+include LICENSE
+
+global-exclude .DS_Store
+
+prune vocab/tests

@@ -1,26 +1,40 @@
 from django.db import models
-from vocab.managers import ItemIndexManager
+from django.db.models import Q
+from vocab.managers import ItemManager, ItemIndexManager
 
 class AbstractItem(models.Model):
-    "The foreign key or many-to-many field to parent items must be defined."
+    """The foreign key or many-to-many field to parent items must be defined.
+
+    ``description_field`` should be set to the name or description char/text
+    of the model. This is used for ordering and textual representation of
+    ID-based queries (via the translator).
+
+    ``search_fields`` are a list of fields that may be used for case-insensitive
+    lookups (icontains). This is required for using Resource classes.
+    """
+    description_field = 'description'
+    search_fields = ('description',)
+
     terminal = models.NullBooleanField()
+
+    objects = ItemManager()
 
     class Meta(object):
         abstract = True
 
     def ancestors(self, include_self=False):
         "Returns a ``QuerySet`` containing all ancestors of this item."
-        ids = self.item_indexes.exclude(parent=None).values_list('parent', flat=True)
+        subquery = self.item_indexes.exclude(parent=None).values_list('parent__pk', flat=True)
         if include_self:
-            ids = list(ids) + [self.pk]
-        return self.__class__.objects.filter(pk__in=ids)
+            return self.__class__.objects.filter(Q(pk__in=subquery) | Q(pk=self.pk))
+        return self.__class__.objects.filter(pk__in=subquery)
 
     def descendents(self, include_self=False):
         "Returns a ``QuerySet`` containing all descendents of this item."
-        ids = self.parent_indexes.values_list('item', flat=True)
+        subquery = self.parent_indexes.values_list('item__pk', flat=True)
         if include_self:
-            ids = [self.pk] + list(ids)
-        return self.__class__.objects.filter(pk__in=ids)
+            return self.__class__.objects.filter(Q(pk__in=subquery) | Q(pk=self.pk))
+        return self.__class__.objects.filter(pk__in=subquery)
 
 
 class AbstractItemIndex(models.Model):

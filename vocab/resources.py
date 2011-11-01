@@ -7,20 +7,23 @@ class ItemResource(resources.Resource):
 
         if item is None:
             return http.NOT_FOUND
-
         return item
 
 
 class ItemResourceCollection(resources.Resource):
     search_enabled = True
     max_results = 100
-    order_by = ('name',)
+    order_by = None
 
     def GET(self, request):
         queryset = self.queryset(request)
 
+        order_by = self.order_by
+        if not order_by:
+            order_by = (queryset.model.description_field,)
+
         # search if enabled
-        if request.GET.has_key('q') and self.search_enabled:
+        if self.search_enabled and request.GET.has_key('q'):
             kwargs = {}
             q = request.GET['q']
             query = Q()
@@ -28,10 +31,10 @@ class ItemResourceCollection(resources.Resource):
             for field in getattr(self.model, 'search_fields', ()):
                 query = query | Q(**{'%s__icontains' % field: q})
 
-            queryset = queryset.order_by('-parent', *self.order_by)
+            queryset = queryset.order_by('-parent', *order_by)
 
             return queryset.filter(query)[:self.max_results]
 
-        # get all root items
-        return queryset.filter(parent=None).order_by(*self.order_by)
+        # get all root items by default
+        return queryset.filter(parent=None).order_by(*order_by)
 

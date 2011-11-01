@@ -1,5 +1,15 @@
 from django.db import models, transaction
 
+class ItemManager(models.Manager):
+    def ancestors(self, pk, *args, **kwargs):
+        "Returns a ``QuerySet`` containing all ancestors of this item."
+        return self.get_query_set().get(pk=pk).ancestors(*args, **kwargs)
+
+    def descendents(self, pk, *args, **kwargs):
+        "Returns a ``QuerySet`` containing all descendents of this item."
+        return self.get_query_set().get(pk=pk).descendents(*args, **kwargs)
+
+
 class ItemIndexManager(models.Manager):
     def _index_ancestors(self, item, parent, depth=0):
         self.get_or_create(item=item, parent=parent, depth=depth)

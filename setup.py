@@ -57,8 +57,6 @@ for dirpath, dirnames, filenames in os.walk(BASE_PACKAGE):
     for i, dirname in enumerate(dirnames):
         if dirname.startswith('.'):
             del dirnames[i]
-        elif dirname in ('tests', 'fixtures', 'scss', 'cs'):
-            del dirnames[i]
     if '__init__.py' in filenames:
         packages.append('.'.join(fullsplit(dirpath)))
     elif filenames:
@@ -75,11 +73,12 @@ version = __import__(BASE_PACKAGE).get_version()
 setup(
     version = version,
     name = 'harvest-vocab',
-    author = 'Jeff Miller, Michael Italia, Byron Ruth',
+    author = 'Byron Ruth',
     author_email = 'ruthb@email.chop.edu',
-    description = 'A browser for a hierarchical controlled vocabulary',
+    description = 'A Harvest Stack app for modeling hierarchical data',
     license = 'BSD',
-    keywords = 'snippets tools utilities',
+    keywords = 'django harvest avocado cilantro vocabulary hierarchical',
+    url = 'https://github.com/cbmi/harvest-vocab',
 
     packages = packages,
     cmdclass = cmdclasses,

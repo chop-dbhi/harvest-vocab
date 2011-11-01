@@ -21,17 +21,17 @@ class ItemTestCase(TestCase):
 
     def test_ancestors(self):
         tickets = {
-            1: [],
-            2: [1],
-            3: [],
-            4: [3],
-            5: [3, 4],
-            6: [3],
-            7: [3, 4, 5],
+            1: [1],
+            2: [1, 2],
+            3: [3],
+            4: [3, 4],
+            5: [3, 4, 5],
+            6: [3, 6],
+            7: [3, 4, 5, 7],
         }
 
         for ticket in Ticket.objects.iterator():
-            ancestors = ticket.ancestors().values_list('pk', flat=True)
+            ancestors = ticket.ancestors(include_self=True).values_list('pk', flat=True)
             self.assertEqual(list(ancestors), tickets[ticket.id])
 
     def test_descendents(self):
