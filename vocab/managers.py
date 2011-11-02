@@ -10,6 +10,10 @@ class ItemManager(models.Manager):
         return self.get_query_set().get(pk=pk).descendants(*args, **kwargs)
 
 
+class ItemIndexThroughManager(models.Manager):
+    pass
+
+
 class ItemIndexManager(models.Manager):
     def _index_ancestors(self, item, parent, depth=0):
         self.get_or_create(item=item, parent=parent, depth=depth)
