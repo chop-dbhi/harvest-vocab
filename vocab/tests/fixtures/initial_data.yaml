@@ -53,3 +53,60 @@
     description: null
     parent: 5
     terminal: true
+
+- model: tests.ticketholder
+  pk: 1
+  fields:
+    name: Ada Lovelace
+
+- model: tests.ticketholder
+  pk: 2
+  fields:
+    name: Charles Babbage
+
+- model: tests.ticketholder
+  pk: 3
+  fields:
+    name: Grace Hopper
+
+- model: tests.ticketthrough
+  pk: 1
+  fields:
+    holder: 3
+    ticket: 1
+
+- model: tests.ticketthrough
+  pk: 2
+  fields:
+    holder: 1
+    ticket: 2
+
+- model: tests.ticketthrough
+  pk: 3
+  fields:
+    holder: 2
+    ticket: 3
+
+- model: tests.ticketthrough
+  pk: 4
+  fields:
+    holder: 1
+    ticket: 4
+
+- model: tests.ticketthrough
+  pk: 5
+  fields:
+    holder: 3
+    ticket: 5
+
+- model: tests.ticketthrough
+  pk: 6
+  fields:
+    holder: 3
+    ticket: 6
+
+- model: tests.ticketthrough
+  pk: 7
+  fields:
+    holder: 2
+    ticket: 7
