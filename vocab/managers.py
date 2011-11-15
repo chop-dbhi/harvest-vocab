@@ -1,4 +1,6 @@
-from django.db import models, transaction
+from django.db import models, transaction, connection
+from django.utils.datastructures import SortedDict
+import string
 
 class ItemManager(models.Manager):
     def ancestors(self, pk, *args, **kwargs):
@@ -11,25 +13,63 @@ class ItemManager(models.Manager):
 
 class ItemIndexThroughManager(models.Manager):
 
-    def _get_select(self, values, then_val, else_val):
-        ''' Returns the select portion of the query based on the values
+    def _construct_case_statements(self, values, true_value, false_value):
+        ''' Constructs the case statements for the SQL string
         '''
+        qn = connection.ops.quote_name
+        query = []
+        for val in values:
+            for v in val:
+                query.append("SUM(CASE WHEN %(source_column)s = %(value)s"
+                    " THEN %(true_value)s ELSE %(false_value)s END) AS"
+                    " %(column_alias)s" %
+                    {'source_column': qn(v._meta.module_name + "_id"),
+                    'value': v.id,
+                    'true_value' : true_value,
+                    'false_value' : false_value,
+                    'column_alias' : qn("cname_" + str(v.id)),})
+        return ", ".join(query)
+
+
+    def _construct_where_condition(self, values, where_equals, child_join,
+                                node_join):
+        ''' Constructs the conditions portion of the SQL string by setting each
+        values row equal to where_equals. It joins each child condition by
+        child_join and each top level condition by node_join
+        '''
+        qn = connection.ops.quote_name
+        query = []
+        for val in values:
+            child_where = [" %(column_alias)s = %(where_value)s " %
+                {'column_alias': qn("cname_"+str(v.id)),
+                'where_value' : where_equals} for v in val]
+            child_where = child_join.join(child_where)
+            query.append(" (" + child_where + ") ")
+        return node_join.join(query)
+
+    def _get_query(self, values, case_statements, where_conditions):
+        ''' Constructs an SQL query based on the values, case_statments,
+        and where conditions provided and runs the query on the associated
+        model.
+        '''
+        qn = connection.ops.quote_name
+
         name = values[0][0]._meta.module_name
         fields = self.model._meta.fields
-        through_name = self.model._meta.db_table
 
         for f in fields:
             if isinstance(f, models.ForeignKey):
                 if f.name != name:
-                     id_name = f.name+'_id'
-
-        name_id = name + "_id"
-        query = "SELECT * FROM (SELECT " + id_name + " as id, "
-
-        for val in values:
-            for v in val:
-                query += "SUM(CASE WHEN %s = %s THEN %s ELSE %s END) as \"%s\", " %(name_id, v.id, then_val, else_val, "cname_" + str(v.id))
-        query = query[:len(query)-2] + " FROM %s GROUP BY %s) AS T" %(through_name, id_name)
+                    target_column = f.name + '_id'
+        
+        query = "SELECT * FROM (" \
+            " SELECT %(target_column)s AS id, %(case_statements)s FROM" \
+            " %(through_table)s GROUP BY %(target_column)s) AS T WHERE " \
+            " %(where_condition)s" \
+            %{'target_column' : qn(target_column) ,
+                'case_statements' : case_statements,
+                'through_table' : qn(self.model._meta.db_table),
+                'where_condition' : where_conditions}
 
         return query
 
@@ -37,46 +77,52 @@ class ItemIndexThroughManager(models.Manager):
         ''' If all of the values match for an element, it is returned in the
         query.
         '''
-        values = [v.descendents(include_self=True) for v in values]
-        q = self._get_select(values, 1, 0) + " WHERE "
-        for val in values:
-            q += " ("
-            for v in val:
-                q += ("\"%s\" = 1 OR " %("cname_"+str(v.id)))
-            q = q[:len(q)-3] + ")AND "
-        q = q[:len(q)-4]+";"
-
-        return self.model.objects.raw('%s' %q)
+        if isinstance(values,list) and len(values) > 0:
+            values = [v.descendents(include_self=True) for v in values]
+            case_statements = self._construct_case_statements(values, 1, 0)
+            where_condition = self._construct_where_condition(values, 1, "OR",
+                                    "AND")
+            query = self._get_query(values, case_statements, where_condition)
+            return self.model.objects.raw(query)
+        else:
+            raise ValueError("requires_all: %(values)s is not a list with" \
+                " greater than 0 elements." %{'values' : values})
 
     def not_all(self, values):
         ''' If any of the values match for an element, it is NOT returned in
         the query.
         '''
-        values = [v.descendents(include_self=True) for v in values]
-        q = self._get_select(values, 1, 0) + " WHERE "
-        for val in values:
-            q += " ("
-            for v in val:
-                q += "\"%s\" = 0 AND " %("cname_"+str(v.id))
-            q = q[:len(q)-4] + ")OR "
-        q = q[:len(q)-3]+";"
-
-        return self.model.objects.raw('%s' %q)
-
+        if isinstance(values,list) and len(values) > 0:
+            values = [v.descendents(include_self=True) for v in values]
+            case_statements = self._construct_case_statements(values, 1, 0)
+            where_condition = self._construct_where_condition(values, 0, "AND",
+                                        "OR")
+            query = self._get_query(values, case_statements, where_condition)
+            return self.model.objects.raw(query)
+        else:
+            raise ValueError("not_all: %(values)s is not a list with" \
+                "greater than 0 elements." %{'values' : values})
+    
     def only(self, values):
         ''' If any of the values match for an element, it is NOT returned in
         the query.
         '''
-        values = [v.descendents(include_self=True) for v in values]
-        result = -1 * (len(values) - 1)
-        q = self._get_select(values, result , 1)+ " WHERE "
-        for val in values:
-            q += " ("
-            for v in val:
-                q += "\"%s\" = %s OR " %("cname_"+str(v.id), 0)
-            q = q[:len(q)-3] + ") AND "
-        q = q[:len(q)-4]+";"
-        return self.model.objects.raw('%s' %q)
+        if isinstance(values,list) and len(values) > 0:
+            values = [v.descendents(include_self=True) for v in values]
+
+            ''' The values that the case statement will be set to if it has
+            the specified element'''
+            set_value = -1 * (len(values) - 1)
+
+            case_statements = self._construct_case_statements(values,
+                                    set_value, 1)
+            where_condition = self._construct_where_condition(values, 0, "OR",
+                                    "AND")
+            query = self._get_query(values, case_statements, where_condition)
+            return self.model.objects.raw(query)
+        else:
+            raise ValueError("only: %(values)s is not a list with greater" \
+                " than 0 elements." %{'values' : values})
 
 class ItemIndexManager(models.Manager):
     def _index_ancestors(self, item, parent, depth=0):
