@@ -60,7 +60,7 @@ class ItemIndexThroughManager(models.Manager):
         for f in fields:
             if isinstance(f, models.ForeignKey):
                 if f.name != name:
-                    target_column = f.name + '_id'
+                    target_column = f.column
         
         query = "SELECT * FROM (" \
             " SELECT %(target_column)s AS id, %(case_statements)s FROM" \
