@@ -110,7 +110,7 @@
         -moz-border-radius: 15px 15px 15px 15px;
 
         border-radius: 15px 15px 15px 15px;
-        background: #fff url(../img/icons/search.png) no-repeat 3px;
+        background: #fff url(../../images/search.png) no-repeat 3px;
         padding: 2px 5px 2px 21px;
         border: 1px solid #999;
         width: 200px;
@@ -118,7 +118,7 @@
 
     /* only choices should convey this behavior */
     .choices li.folder {
-        background-image: url('../img/icons/right-arrow.png');
+        background-image: url('../../images/right-arrow.png');
         background-repeat: no-repeat;
         background-position: 98% center;
 

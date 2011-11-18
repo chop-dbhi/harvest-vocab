@@ -2,4 +2,9 @@ include LICENSE
 
 global-exclude .DS_Store
 
+exclude vocab/static/vocab/scripts/javascript/app.build.js
+exclude vocab/static/vocab/scripts/javascript/min/build.txt
+
 prune vocab/tests
+prune vocab/static/vocab/stylesheets/scss
+prune vocab/static/vocab/scripts/coffeescript

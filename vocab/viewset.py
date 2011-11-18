@@ -2,6 +2,11 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from avocado.criteria.viewset import AbstractViewSet
 
+if settings.DEBUG:
+    directory = 'src'
+else:
+    directory = 'min'
+
 class VocabBrowserViewSet(AbstractViewSet):
     """Simple viewset for rendering a vocabulary _browser_.
 
@@ -14,8 +19,7 @@ class VocabBrowserViewSet(AbstractViewSet):
     search_only = False
 
     def browser(self, concept, cfields, *args, **kwargs):
-        STATIC_URL =  settings.STATIC_URL
-
+        STATIC_URL = settings.STATIC_URL
         if type(self.url_reversed) is str:
             url = reverse(self.url_reversed)
         else:
@@ -31,7 +35,7 @@ class VocabBrowserViewSet(AbstractViewSet):
                 'type':'custom',
                 'directory': url,
                 'search_only': self.search_only,
-                'js'  : STATIC_URL + 'vocab/js/vocabulary.js',
-                'css' : STATIC_URL + 'vocab/css/vocabulary.css',
+                'js'  : STATIC_URL + 'vocab/scripts/javascript/{0}/vocabulary.js'.format(directory),
+                'css' : STATIC_URL + 'vocab/stylesheets/css/vocabulary.css',
             }],
         }
