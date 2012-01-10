@@ -30,8 +30,8 @@ class AbstractItem(models.Model):
             return self.__class__.objects.db_manager(db).filter(Q(pk__in=subquery) | Q(pk=self.pk))
         return self.__class__.objects.db_manager(db).filter(pk__in=subquery)
 
-    def descendents(self, include_self=False):
-        "Returns a ``QuerySet`` containing all descendents of this item."
+    def descendants(self, include_self=False):
+        "Returns a ``QuerySet`` containing all descendants of this item."
         db = router.db_for_read(self.__class__, instance=self)
         subquery = self.parent_indexes.db_manager(db).values_list('item__pk', flat=True)
         if include_self:

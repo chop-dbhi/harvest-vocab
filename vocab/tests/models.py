@@ -34,7 +34,7 @@ class ItemTestCase(TestCase):
             ancestors = ticket.ancestors(include_self=True).values_list('pk', flat=True)
             self.assertEqual(list(ancestors), tickets[ticket.id])
 
-    def test_descendents(self):
+    def test_descendants(self):
         tickets = {
             1: [2],
             2: [],
@@ -46,8 +46,8 @@ class ItemTestCase(TestCase):
         }
 
         for ticket in Ticket.objects.using('alt').iterator():
-            descendents = ticket.descendents().values_list('pk', flat=True)
-            self.assertEqual(list(descendents), tickets[ticket.id])
+            descendants = ticket.descendants().values_list('pk', flat=True)
+            self.assertEqual(list(descendants), tickets[ticket.id])
 
     def test_terminals(self):
         terminals = Ticket.objects.using('alt').filter(terminal=True).values_list('pk', flat=True)

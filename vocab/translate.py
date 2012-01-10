@@ -12,7 +12,7 @@ class VocabularyTranslator(AbstractTranslator):
         # get all descedents for all top-level items that were selected        
         subquery = field.model.objects.none()
         for pk in cleaned_data['value']:
-            subquery = subquery | field.model.objects.descendents(pk, include_self=True)
+            subquery = subquery | field.model.objects.descendants(pk, include_self=True)
 
         meta['condition'] = self._condition(field, cleaned_data['operator'], subquery, using)
 

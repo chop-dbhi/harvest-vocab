@@ -5,9 +5,9 @@ class ItemManager(models.Manager):
         "Returns a ``QuerySet`` containing all ancestors of this item."
         return self.get_query_set().get(pk=pk).ancestors(*args, **kwargs)
 
-    def descendents(self, pk, *args, **kwargs):
-        "Returns a ``QuerySet`` containing all descendents of this item."
-        return self.get_query_set().get(pk=pk).descendents(*args, **kwargs)
+    def descendants(self, pk, *args, **kwargs):
+        "Returns a ``QuerySet`` containing all descendants of this item."
+        return self.get_query_set().get(pk=pk).descendants(*args, **kwargs)
 
 
 class ItemIndexManager(models.Manager):
