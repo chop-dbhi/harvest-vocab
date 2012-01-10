@@ -17,7 +17,7 @@ class TicketIndex(AbstractItemIndex):
 
 class ItemTestCase(TestCase):
     def setUp(self):
-        TicketIndex.objects.index()
+        TicketIndex.objects.db_manager('alt').index()
 
     def test_ancestors(self):
         tickets = {
@@ -30,7 +30,7 @@ class ItemTestCase(TestCase):
             7: [3, 4, 5, 7],
         }
 
-        for ticket in Ticket.objects.iterator():
+        for ticket in Ticket.objects.using('alt').iterator():
             ancestors = ticket.ancestors(include_self=True).values_list('pk', flat=True)
             self.assertEqual(list(ancestors), tickets[ticket.id])
 
@@ -45,11 +45,11 @@ class ItemTestCase(TestCase):
             7: [],
         }
 
-        for ticket in Ticket.objects.iterator():
+        for ticket in Ticket.objects.using('alt').iterator():
             descendents = ticket.descendents().values_list('pk', flat=True)
             self.assertEqual(list(descendents), tickets[ticket.id])
 
     def test_terminals(self):
-        terminals = Ticket.objects.filter(terminal=True).values_list('pk', flat=True)
+        terminals = Ticket.objects.using('alt').filter(terminal=True).values_list('pk', flat=True)
         self.assertEqual(list(terminals), [2, 6, 7])
 

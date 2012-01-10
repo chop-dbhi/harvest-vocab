@@ -22,7 +22,7 @@ class ItemIndexManager(models.Manager):
     def index(self):
         indexed_model = self.model._meta.get_field_by_name('item')[0].rel.to
 
-        items = indexed_model._default_manager.all()
+        items = indexed_model._default_manager.db_manager(self.db).all()
 
         for item in iter(items):
             self._index_ancestors(item, item.parent)

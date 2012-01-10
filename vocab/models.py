@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, router
 from django.db.models import Q
 from vocab.managers import ItemManager, ItemIndexManager
 
@@ -24,17 +24,19 @@ class AbstractItem(models.Model):
 
     def ancestors(self, include_self=False):
         "Returns a ``QuerySet`` containing all ancestors of this item."
-        subquery = self.item_indexes.exclude(parent=None).values_list('parent__pk', flat=True)
+        db = router.db_for_read(self.__class__, instance=self)
+        subquery = self.item_indexes.db_manager(db).exclude(parent=None).values_list('parent__pk', flat=True)
         if include_self:
-            return self.__class__.objects.filter(Q(pk__in=subquery) | Q(pk=self.pk))
-        return self.__class__.objects.filter(pk__in=subquery)
+            return self.__class__.objects.db_manager(db).filter(Q(pk__in=subquery) | Q(pk=self.pk))
+        return self.__class__.objects.db_manager(db).filter(pk__in=subquery)
 
     def descendents(self, include_self=False):
         "Returns a ``QuerySet`` containing all descendents of this item."
-        subquery = self.parent_indexes.values_list('item__pk', flat=True)
+        db = router.db_for_read(self.__class__, instance=self)
+        subquery = self.parent_indexes.db_manager(db).values_list('item__pk', flat=True)
         if include_self:
-            return self.__class__.objects.filter(Q(pk__in=subquery) | Q(pk=self.pk))
-        return self.__class__.objects.filter(pk__in=subquery)
+            return self.__class__.objects.db_manager(db).filter(Q(pk__in=subquery) | Q(pk=self.pk))
+        return self.__class__.objects.db_manager(db).filter(pk__in=subquery)
 
 
 class AbstractItemIndex(models.Model):
