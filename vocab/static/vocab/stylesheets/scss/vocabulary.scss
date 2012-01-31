@@ -1,4 +1,44 @@
-.browser {
+@import "bourbon/bourbon";
+
+@function is-dark-on-light($color, $bgcolor) {
+    @return lightness($bgcolor) > lightness($color);
+}
+
+@mixin clean-button($start, $stop: none, $color: #333) {
+    @if $stop == none {
+        $stop: darken($start, 10);
+    }
+
+    @include border-radius(3px);
+    @include linear-gradient(top, $start, $stop);
+
+    border: 1px solid darken($stop, 5);
+    border-bottom: 1px solid darken($stop, 10);
+    color: $color;
+    line-height: 1;
+    font-weight: bold;
+
+    @if is-dark-on-light($color, $start) {
+        text-shadow: 0 1px 1px $start;
+    } @else {
+        text-shadow: 0 1px 1px darken($stop, 10);
+    }
+
+    &:hover {
+        @include linear-gradient(top, darken($start, 10), darken($stop, 10));
+        border: 1px solid darken($stop, 10);
+        border-bottom: 1px solid darken($stop, 20);
+        cursor: pointer;
+        @if is-dark-on-light($color, $start) {
+            text-shadow: 0 1px 1px darken($start, 10);
+        } @else {
+            text-shadow: 0 1px 1px darken($stop, 30);
+        }
+    }
+}
+
+
+.vocab-browser {
 
     .tabs {
         padding: 0;
@@ -10,44 +50,10 @@
         font-weight: normal;
     }
 
-    .breadcrumbs {
-        margin: 10px 0;
-        padding: 5px;
-
-        background-color: #ddd;
-
-        > :first-child {
-            padding-top: 0;
-        }
-
-        > * {
-            margin-right: 5px;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-        }
-
-        > a {
-            display: inline-block;
-            *display: inline;
-            zoom: 1;
-            max-width: 200px;
-        }
-
-
-        > h3 {
-            margin: 0;
-            padding-top: 5px;
-            font-size: 1.4em;
-            width: 100%;
-        }
-    }
-
     .list {
         list-style: none;
-        padding: 0;
         margin: 10px 0;
-        max-height: 400px;
+        padding: 0;
         overflow: auto;
 
         &::-webkit-scrollbar {
@@ -55,17 +61,24 @@
         }
 
         &::-webkit-scrollbar-thumb:vertical {
+            @include border-radius(1ex);
             background: rgba(0, 0, 0, 0.2);
-            -webkit-border-radius: 1ex;
         }
 
         li {
+            @include inline-block;
+            width: 98%;
+
             > * {
-                max-width: 450px;
-                display: inline-block;
-                *display: inline;
-                zoom: 1;
+                @include inline-block;
+                max-width: 88%;
                 vertical-align: middle;
+            }
+
+            .status {
+                display: none;
+                input { min-width: 0; width: auto; }
+                label { margin-right: 5px; }
             }
 
             button {
@@ -83,17 +96,17 @@
             }
 
             &:first-child {
-                border-top: 1px dotted #999;
+                border-top: 1px solid #ccc;
             }
 
-            border-bottom: 1px dotted #999;
-            padding: 5px 10px;
-            list-style: none;
+            padding: 5px;
+            border-bottom: 1px solid #ccc;
             text-shadow: 1px 1px 0 #fff;
         }
     }
 
     form {
+        @include border-radius(3px);
         margin: 10px 0;
         padding: 5px;
         background-color: #ddd;
@@ -104,20 +117,39 @@
     }
 
     input {
-        -moz-box-shadow: inset 2px 2px 3px 0px #ddd;
-        -webkit-box-shadow: inset 2px 2px 3px 0px #ddd;
-        box-shadow: inset 2px 2px 3px 0px #ddd;
-        -moz-border-radius: 15px 15px 15px 15px;
-
-        border-radius: 15px 15px 15px 15px;
+        @include box-shadow(inset 2px 2px 3px 0 #ddd);
+        @include border-radius(15px);
         background: #fff url(../../images/search.png) no-repeat 3px;
         padding: 2px 5px 2px 21px;
         border: 1px solid #999;
         width: 200px;
     }
 
-    /* only choices should convey this behavior */
-    .choices li.folder {
+    .vocab-breadcrumbs {
+        @include border-radius(3px);
+        margin: 10px 0;
+        padding: 8px 5px 7px 5px;
+
+        background-color: #ddd;
+
+        .breadcrumb-arrow {
+            margin: 0 5px;
+        }
+
+        > * {
+            @include inline-block;
+            max-width: 200px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+    }
+
+    .vocab-browse-results, .vocab-search-results {
+        height: 300px;
+    }
+
+    .vocab-browse-results li.folder {
         background-image: url('../../images/right-arrow.png');
         background-repeat: no-repeat;
         background-position: 98% center;
@@ -128,11 +160,9 @@
         }
     }
 
-    .results {
+    .vocab-search-results {
         > .start, .empty {
             border: none !important;
-            background-color: #eee;
-            padding: 20px;
             text-align: center;
             font-size: 1.3em;
             font-weight: bold;
@@ -140,4 +170,90 @@
         }
     }
 
+    .vocab-staging {
+        padding: 0;
+        list-style: none;
+
+        > li {
+            position: relative;
+            margin-bottom: 5px;
+            font-size: 12px;
+            padding: 5px 0;
+
+            .text {
+                @include inline-block;
+                max-width: 435px;
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+                margin-left: 65px;
+            }
+
+            .icon {
+                @include inline-block;
+                position: absolute;
+                left: 0;
+                width: 48px;
+                margin-right: 5px;
+                padding: 0 5px;
+                border-right: 1px solid #ccc;
+            }
+
+            .clear {
+                @include inline-block;
+                position: absolute;
+                right: 0;
+                margin-left: 5px;
+                padding: 0 5px;
+                border-left: 1px solid #ccc;
+                opacity: 0.5;
+
+                &:hover {
+                    opacity: 1;
+                }
+            }
+
+            &.require {
+                @include clean-button(#e2f0c8);
+                .icon, .clear {
+                    border-color: darken(#e2f0c8, 30);
+                }
+            }
+            &.exclude {
+                @include clean-button(#f0c8c8);
+                .icon, .clear {
+                    border-color: darken(#f0c8c8, 30);
+                }
+            }
+            &.optional {
+                @include clean-button(#eee);
+                .icon, .clear {
+                    border-color: darken(#ddd, 30);
+                }
+            }
+        }
+    }
+
+    .vocab-staging-operations {
+        @include inline-block;
+        @include border-radius(3px);
+        @include box-shadow(0 5px 10px #333);
+        list-style: none;
+        padding: 0;
+        background-color: #fff;
+        font-size: 12px;
+        font-weight: bold;
+        display: none;
+        position: absolute;
+        z-index: 1000;
+
+        li {
+            @include border-radius(3px);
+            cursor: pointer;
+            padding: 3px 5px;
+            &:hover {
+                background-color: #eee;
+            }
+        }
+    }
 }
