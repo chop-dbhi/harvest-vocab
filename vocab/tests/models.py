@@ -1,6 +1,7 @@
 from django.db import models
 from django.test import TestCase
-from vocab.models import AbstractItem, AbstractItemIndex, AbstractItemThrough
+from vocab.models import AbstractItem, AbstractItemIndex
+from vocab.managers import ItemIndexThroughManager
 
 class Ticket(AbstractItem):
     search_fields = ('name', 'description')
@@ -14,13 +15,18 @@ class TicketIndex(AbstractItemIndex):
     item = models.ForeignKey(Ticket, related_name='item_indexes')
     parent = models.ForeignKey(Ticket, null=True, related_name='parent_indexes')
 
+
 class TicketHolder(models.Model):
     name = models.CharField(max_length=50)
     tickets = models.ManyToManyField(Ticket, through="TicketThrough")
 
-class TicketThrough(AbstractItemThrough):
+
+class TicketThrough(models.Model):
     holder = models.ForeignKey(TicketHolder, related_name = 'holder_thr')
-    ticket = models.ForeignKey(Ticket,null=True, related_name='ticket_thr')
+    ticket = models.ForeignKey(Ticket, null=True, related_name='ticket_thr')
+
+    objects = ItemIndexThroughManager('ticket', 'holder')
+
 
 class ItemTestCase(TestCase):
     def setUp(self):
@@ -61,9 +67,9 @@ class ItemTestCase(TestCase):
         self.assertEqual(list(terminals), [2, 6, 7])
 
     def test_requires_all(self):
-        values = [Ticket.objects.get(pk=3), Ticket.objects.get(pk=1)]
+        values = [Ticket.objects.db_manager('alt').get(pk=3), Ticket.objects.db_manager('alt').get(pk=1)]
 
-        p = TicketThrough.objects.requires_all(values)
+        p = TicketThrough.objects.db_manager('alt').requires_all(values)
         id_nums= [c.id for c in p]
 
         self.assertEqual(list(id_nums), [1,3])
@@ -72,9 +78,9 @@ class ItemTestCase(TestCase):
         self.assertEqual(list(holders), ['Ada Lovelace', 'Grace Hopper'])
 
     def test_not_all(self):
-        values = [Ticket.objects.get(pk=1), Ticket.objects.get(pk=5)]
+        values = [Ticket.objects.db_manager('alt').get(pk=1), Ticket.objects.db_manager('alt').get(pk=5)]
 
-        p = TicketThrough.objects.not_all(values)
+        p = TicketThrough.objects.db_manager('alt').not_all(values)
         id_nums= [c.id for c in p]
 
         self.assertEqual(list(id_nums), [1,2])
@@ -83,9 +89,9 @@ class ItemTestCase(TestCase):
         self.assertEqual(list(holders), ['Ada Lovelace', 'Charles Babbage'])
 
     def test_only(self):
-        values = [Ticket.objects.get(pk=1), Ticket.objects.get(pk=5), Ticket.objects.get(pk=6)]
+        values = [Ticket.objects.db_manager('alt').get(pk=1), Ticket.objects.db_manager('alt').get(pk=5), Ticket.objects.db_manager('alt').get(pk=6)]
 
-        p = TicketThrough.objects.only(values)
+        p = TicketThrough.objects.db_manager('alt').only(values)
         id_nums= [c.id for c in p]
 
         self.assertEqual(list(id_nums), [3])

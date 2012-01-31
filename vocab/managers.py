@@ -1,6 +1,4 @@
-import string
 from django.db import models, transaction, connection
-from django.utils.datastructures import SortedDict
 
 quote_name = connection.ops.quote_name
 
@@ -34,8 +32,8 @@ class ItemIndexThroughManager(models.Manager):
         statement = 'SUM(CASE WHEN %(term_column)s = %(term_pk)s THEN %(true_value)s ' \
             'ELSE %(false_value)s END) AS %(column_alias)s'
 
-        for descendents in subqueries:
-            for term in descendents:
+        for descendants in subqueries:
+            for term in descendants:
                 query.append(statement % {
                     'term_column': quote_name(self.term_field.column),
                     'term_pk': term.pk,
@@ -53,13 +51,12 @@ class ItemIndexThroughManager(models.Manager):
         query = []
         statement = ' %(column_alias)s = %(where_value)s '
 
-        for descendents in subqueries:
+        for descendants in subqueries:
             child_where = [statement % {
                 'column_alias': quote_name('cname_' + str(term.pk)),
                 'where_value': where_equals,
-            } for term in descendents]
-
-            query.append(child_join.join(child_where))
+            } for term in descendants]
+            query.append(' (' + child_join.join(child_where) + ') ')
         return node_join.join(query)
 
     def _get_query(self, subqueries, case_statements, where_conditions):
@@ -80,39 +77,40 @@ class ItemIndexThroughManager(models.Manager):
 
     def requires_all(self, terms):
         "Returns through objects that are associated with 'all' of the given terms."
-        subqueries = [term.descendents(include_self=True) for term in terms]
+        subqueries = [term.descendants(include_self=True) for term in terms]
         case_statements = self._construct_case_statements(subqueries, 1, 0)
         where_condition = self._construct_where_condition(subqueries, 1, 'OR', 'AND')
         query = self._get_query(subqueries, case_statements, where_condition)
 
         # Raw queries are lightly wrapped cursors and are not pickleable so we must
         # evaluate it here
-        ids = [x.id for x in self.model.objects.raw(query)]
+        ids = [x.id for x in self.raw(query)]
         if not ids:
             return []
-        return self.object_field.model.objects.filter(pk__in=ids)
+        return self.object_field.model.objects.db_manager(self.db).filter(pk__in=ids)
 
     def not_all(self, terms):
         "Returns through objects that are _not_ associated with all of the given terms."
-        subqueries = [term.descendents(include_self=True) for term in terms]
+        subqueries = [term.descendants(include_self=True) for term in terms]
         case_statements = self._construct_case_statements(subqueries, 1, 0)
         where_condition = self._construct_where_condition(subqueries, 0, 'AND', 'OR')
         query = self._get_query(terms, case_statements, where_condition)
-        ids = [x.id for x in self.model.objects.raw(query)]
+
+        ids = [x.id for x in self.raw(query)]
         if not ids:
             return []
-        return self.object_field.model.objects.filter(pk__in=ids)
+        return self.object_field.model.objects.db_manager(self.db).filter(pk__in=ids)
 
     def only(self, terms):
         "Returns through objects that 'only' match the given terms."
-        # TODO finding the descendents for an 'only' query does not make sense
+        # TODO finding the descendants for an 'only' query does not make sense
         # since if an object is associated with a term (e.g. dog), the object won't
         # also be associated with a descendent term (e.g. beagle) that is more
         # specific. The more specific one implies the ancestory terms
 
-        # Queries the index for the descendents of each term. These are the
+        # Queries the index for the descendants of each term. These are the
         # complete sets that are applicable to this query
-        subqueries = [term.descendents(include_self=True) for term in terms]
+        subqueries = [term.descendants(include_self=True) for term in terms]
 
         # The values that the case statement will be set to if it has
         # the specified element
@@ -121,10 +119,11 @@ class ItemIndexThroughManager(models.Manager):
         case_statements = self._construct_case_statements(subqueries, set_value, 1)
         where_condition = self._construct_where_condition(subqueries, 0, 'OR', 'AND')
         query = self._get_query(subqueries, case_statements, where_condition)
-        ids = [x.id for x in self.model.objects.raw(query)]
+
+        ids = [x.id for x in self.raw(query)]
         if not ids:
             return []
-        return self.object_field.model.objects.filter(pk__in=ids)
+        return self.object_field.model.objects.db_manager(self.db).filter(pk__in=ids)
 
 
 class ItemIndexManager(models.Manager):
