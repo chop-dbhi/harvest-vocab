@@ -1,6 +1,6 @@
 from django.db import models, router
 from django.db.models import Q
-from vocab.managers import ItemManager, ItemIndexManager, ItemIndexThroughManager
+from vocab.managers import ItemManager, ItemIndexManager
 
 class AbstractItem(models.Model):
     """The foreign key or many-to-many field to parent items must be defined.
@@ -37,13 +37,6 @@ class AbstractItem(models.Model):
         if include_self:
             return self.__class__.objects.db_manager(db).filter(Q(pk__in=subquery) | Q(pk=self.pk))
         return self.__class__.objects.db_manager(db).filter(pk__in=subquery)
-
-
-class AbstractItemThrough(models.Model):
-    objects = ItemIndexThroughManager()
-
-    class Meta(object):
-        abstract = True
 
 
 class AbstractItemIndex(models.Model):

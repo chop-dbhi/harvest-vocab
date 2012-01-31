@@ -1,6 +1,8 @@
+import string
 from django.db import models, transaction, connection
 from django.utils.datastructures import SortedDict
-import string
+
+quote_name = connection.ops.quote_name
 
 class ItemManager(models.Manager):
     def ancestors(self, pk, *args, **kwargs):
@@ -11,118 +13,119 @@ class ItemManager(models.Manager):
         "Returns a ``QuerySet`` containing all descendants of this item."
         return self.get_query_set().get(pk=pk).descendants(*args, **kwargs)
 
+
 class ItemIndexThroughManager(models.Manager):
+    def __init__(self, term_field_name, object_field_name):
+        self._term_field_name = term_field_name
+        self._object_field_name = object_field_name
+        super(ItemIndexThroughManager, self).__init__()
 
-    def _construct_case_statements(self, values, true_value, false_value):
-        ''' Constructs the case statements for the SQL string
-        '''
-        qn = connection.ops.quote_name
+    @property
+    def term_field(self):
+        return self.model._meta.get_field_by_name(self._term_field_name)[0]
+
+    @property
+    def object_field(self):
+        return self.model._meta.get_field_by_name(self._object_field_name)[0]
+
+    def _construct_case_statements(self, subqueries, true_value, false_value):
+        "Constructs the case statements for the SQL string"
         query = []
-        for val in values:
-            for v in val:
-                query.append("SUM(CASE WHEN %(source_column)s = %(value)s"
-                    " THEN %(true_value)s ELSE %(false_value)s END) AS"
-                    " %(column_alias)s" %
-                    {'source_column': qn(v._meta.module_name + "_id"),
-                    'value': v.id,
-                    'true_value' : true_value,
-                    'false_value' : false_value,
-                    'column_alias' : qn("cname_" + str(v.id)),})
-        return ", ".join(query)
+        statement = 'SUM(CASE WHEN %(term_column)s = %(term_pk)s THEN %(true_value)s ' \
+            'ELSE %(false_value)s END) AS %(column_alias)s'
 
+        for descendents in subqueries:
+            for term in descendents:
+                query.append(statement % {
+                    'term_column': quote_name(self.term_field.column),
+                    'term_pk': term.pk,
+                    'true_value': true_value,
+                    'false_value': false_value,
+                    'column_alias': quote_name('cname_' + str(term.pk)),
+                })
+        return ', '.join(query)
 
-    def _construct_where_condition(self, values, where_equals, child_join,
-                                node_join):
-        ''' Constructs the conditions portion of the SQL string by setting each
+    def _construct_where_condition(self, subqueries, where_equals, child_join, node_join):
+        """Constructs the conditions portion of the SQL string by setting each
         values row equal to where_equals. It joins each child condition by
-        child_join and each top level condition by node_join
-        '''
-        qn = connection.ops.quote_name
+        child_join and each top level condition by node_join.
+        """
         query = []
-        for val in values:
-            child_where = [" %(column_alias)s = %(where_value)s " %
-                {'column_alias': qn("cname_"+str(v.id)),
-                'where_value' : where_equals} for v in val]
-            child_where = child_join.join(child_where)
-            query.append(" (" + child_where + ") ")
+        statement = ' %(column_alias)s = %(where_value)s '
+
+        for descendents in subqueries:
+            child_where = [statement % {
+                'column_alias': quote_name('cname_' + str(term.pk)),
+                'where_value': where_equals,
+            } for term in descendents]
+
+            query.append(child_join.join(child_where))
         return node_join.join(query)
 
-    def _get_query(self, values, case_statements, where_conditions):
-        ''' Constructs an SQL query based on the values, case_statments,
+    def _get_query(self, subqueries, case_statements, where_conditions):
+        """Constructs an SQL query based on the values, case_statments,
         and where conditions provided and runs the query on the associated
         model.
-        '''
-        qn = connection.ops.quote_name
-
-        name = values[0][0]._meta.module_name
-        fields = self.model._meta.fields
-
-        for f in fields:
-            if isinstance(f, models.ForeignKey):
-                if f.name != name:
-                    target_column = f.column
-        
-        query = "SELECT * FROM (" \
-            " SELECT %(target_column)s AS id, %(case_statements)s FROM" \
-            " %(through_table)s GROUP BY %(target_column)s) AS T WHERE " \
-            " %(where_condition)s" \
-            %{'target_column' : qn(target_column) ,
-                'case_statements' : case_statements,
-                'through_table' : qn(self.model._meta.db_table),
-                'where_condition' : where_conditions}
+        """
+        query = (
+            'SELECT * FROM (SELECT %(object_column)s AS id, %(case_statements)s '
+            'FROM %(through_table)s GROUP BY %(object_column)s) AS T WHERE %(where_condition)s' % {
+                'object_column': quote_name(self.object_field.column),
+                'case_statements': case_statements,
+                'through_table': quote_name(self.model._meta.db_table),
+                'where_condition': where_conditions,
+            })
 
         return query
 
-    def requires_all(self, values):
-        ''' If all of the values match for an element, it is returned in the
-        query.
-        '''
-        if isinstance(values,list) and len(values) > 0:
-            values = [v.descendents(include_self=True) for v in values]
-            case_statements = self._construct_case_statements(values, 1, 0)
-            where_condition = self._construct_where_condition(values, 1, "OR",
-                                    "AND")
-            query = self._get_query(values, case_statements, where_condition)
-            return self.model.objects.raw(query)
-        else:
-            raise ValueError("requires_all: %(values)s is not a list with" \
-                " greater than 0 elements." %{'values' : values})
+    def requires_all(self, terms):
+        "Returns through objects that are associated with 'all' of the given terms."
+        subqueries = [term.descendents(include_self=True) for term in terms]
+        case_statements = self._construct_case_statements(subqueries, 1, 0)
+        where_condition = self._construct_where_condition(subqueries, 1, 'OR', 'AND')
+        query = self._get_query(subqueries, case_statements, where_condition)
 
-    def not_all(self, values):
-        ''' If any of the values match for an element, it is NOT returned in
-        the query.
-        '''
-        if isinstance(values,list) and len(values) > 0:
-            values = [v.descendents(include_self=True) for v in values]
-            case_statements = self._construct_case_statements(values, 1, 0)
-            where_condition = self._construct_where_condition(values, 0, "AND",
-                                        "OR")
-            query = self._get_query(values, case_statements, where_condition)
-            return self.model.objects.raw(query)
-        else:
-            raise ValueError("not_all: %(values)s is not a list with" \
-                "greater than 0 elements." %{'values' : values})
-    
-    def only(self, values):
-        ''' If any of the values match for an element, it is NOT returned in
-        the query.
-        '''
-        if isinstance(values,list) and len(values) > 0:
-            values = [v.descendents(include_self=True) for v in values]
+        # Raw queries are lightly wrapped cursors and are not pickleable so we must
+        # evaluate it here
+        ids = [x.id for x in self.model.objects.raw(query)]
+        if not ids:
+            return []
+        return self.object_field.model.objects.filter(pk__in=ids)
 
-            ''' The values that the case statement will be set to if it has
-            the specified element'''
-            set_value = -1 * (len(values) - 1)
+    def not_all(self, terms):
+        "Returns through objects that are _not_ associated with all of the given terms."
+        subqueries = [term.descendents(include_self=True) for term in terms]
+        case_statements = self._construct_case_statements(subqueries, 1, 0)
+        where_condition = self._construct_where_condition(subqueries, 0, 'AND', 'OR')
+        query = self._get_query(terms, case_statements, where_condition)
+        ids = [x.id for x in self.model.objects.raw(query)]
+        if not ids:
+            return []
+        return self.object_field.model.objects.filter(pk__in=ids)
 
-            case_statements = self._construct_case_statements(values,
-                                    set_value, 1)
-            where_condition = self._construct_where_condition(values, 0, "OR",
-                                    "AND")
-            query = self._get_query(values, case_statements, where_condition)
-            return self.model.objects.raw(query)
-        else:
-            raise ValueError("only: %(values)s is not a list with greater" \
-                " than 0 elements." %{'values' : values})
+    def only(self, terms):
+        "Returns through objects that 'only' match the given terms."
+        # TODO finding the descendents for an 'only' query does not make sense
+        # since if an object is associated with a term (e.g. dog), the object won't
+        # also be associated with a descendent term (e.g. beagle) that is more
+        # specific. The more specific one implies the ancestory terms
+
+        # Queries the index for the descendents of each term. These are the
+        # complete sets that are applicable to this query
+        subqueries = [term.descendents(include_self=True) for term in terms]
+
+        # The values that the case statement will be set to if it has
+        # the specified element
+        set_value = -1 * (len(terms) - 1)
+
+        case_statements = self._construct_case_statements(subqueries, set_value, 1)
+        where_condition = self._construct_where_condition(subqueries, 0, 'OR', 'AND')
+        query = self._get_query(subqueries, case_statements, where_condition)
+        ids = [x.id for x in self.model.objects.raw(query)]
+        if not ids:
+            return []
+        return self.object_field.model.objects.filter(pk__in=ids)
+
 
 class ItemIndexManager(models.Manager):
     def _index_ancestors(self, item, parent, depth=0):
