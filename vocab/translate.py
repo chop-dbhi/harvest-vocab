@@ -1,28 +1,57 @@
+from django.db.models import Q
+from django.core.exceptions import ImproperlyConfigured
 from avocado.fields.translate import AbstractTranslator
+from avocado.fields.operators import inlist, notinlist
+from .operators import requireall, notall, only
 
 class VocabularyTranslator(AbstractTranslator):
-    """Cross queries the """
+    through_model = None
+    operators = (inlist, notinlist, requireall, notall, only)
+
+    def __init__(self, *args, **kwargs):
+        if not self.through_model:
+            raise ImproperlyConfigured('Translator requires `through_model` attribute be defined')
+        super(VocabularyTranslator, self).__init__(*args, **kwargs)
+
     def translate(self, field, roperator, rvalue, using, **context):
-        meta = super(VocabularyTranslator, self).translate(field, roperator,
-            rvalue, using, **context)
+        operator, value = self.validate(field, roperator, rvalue, **context)
 
-        cleaned_data = meta['cleaned_data']
-        description_field = field.model.description_field
+        through = self.through_model
 
-        # get all descedents for all top-level items that were selected        
-        subquery = field.model.objects.none()
-        for pk in cleaned_data['value']:
-            subquery = subquery | field.model.objects.descendants(pk, include_self=True)
+        value = field.model.objects.filter(pk__in=value)
 
-        meta['condition'] = self._condition(field, cleaned_data['operator'], subquery, using)
+        # Start with an empty condition
+        condition = Q()
 
-        # get the textual representations of the items being queried.
-        # `raw_data` is used strictly for keeping track of the request data.
-        # we replace the 'value' with these more readable values for downstream
-        # interpretation
-        values = cleaned_data['value']
-        new_value = field.model.objects.filter(pk__in=values)\
-            .values_list(description_field, flat=True)
-        meta['raw_data']['value'] = new_value
+        if operator.operator == 'all':
+            ids = through.objects.requires_all(value)
+            if ids:
+                condition = self._condition(field, inlist, ids, using)
+        elif operator.operator == '-all':
+            ids = through.objects.not_all(value)
+            if ids:
+                condition = self._condition(field, inlist, ids, using)
+        elif operator.operator == 'only':
+            ids = through.objects.only(value)
+            if ids:
+                condition = self._condition(field, inlist, ids, using)
+        else:
+            for item in value:
+                descendents = field.model.objects.descendents(item.pk, include_self=True)
+                condition = condition | self._condition(field, operator, descendents, using)
 
-        return meta
+        new_value = field.model.objects.filter(pk__in=value)\
+            .values_list(field.model.description_field, flat=True)
+
+        return {
+            'condition': condition,
+            'annotations': {},
+            'cleaned_data': {
+                'operator': operator,
+                'value': value,
+            },
+            'raw_data': {
+                'operator': roperator,
+                'value': new_value,
+            }
+        }
