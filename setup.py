@@ -83,6 +83,8 @@ setup(
     packages = packages,
     cmdclass = cmdclasses,
 
+    install_requires = ['cilantro>=0.9.1b7'],
+
     data_files = data_files,
     classifiers = [
         'Development Status :: 4 - Beta',
