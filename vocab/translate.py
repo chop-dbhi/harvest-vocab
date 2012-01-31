@@ -37,8 +37,8 @@ class VocabularyTranslator(AbstractTranslator):
                 condition = self._condition(field, inlist, ids, using)
         else:
             for item in value:
-                descendents = field.model.objects.descendents(item.pk, include_self=True)
-                condition = condition | self._condition(field, operator, descendents, using)
+                descendants = field.model.objects.descendants(item.pk, include_self=True)
+                condition = condition | self._condition(field, operator, descendants, using)
 
         new_value = field.model.objects.filter(pk__in=value)\
             .values_list(field.model.description_field, flat=True)
