@@ -99,17 +99,16 @@ define [
 
                 <h2>Selected <%= title %></h2>
 
-                <small>Drag a <%= title.toLowerCase() %> to any bucket to customize
-                your query.</small>
+                <div style=text-align:center><em>Drag and drop between buckets to customize your query.</em></div>
 
                 <div class=vocab-staging>
-                    <h3>At least one</h3>
+                    <h3>At Least One</h3>
                     <ul id=vocab-optional class=placeholder></ul>
 
-                    <h3>Require</h3>
+                    <h3>Require All</h3>
                     <ul id=vocab-require class=placeholder></ul>
 
-                    <h3>Exclude</h3>
+                    <h3>Exclude All</h3>
                     <ul id=vocab-exclude class=placeholder></ul>
                 </div>
 
@@ -212,6 +211,7 @@ define [
 
             self = @
             sortOptions =
+                placeholder: 'placeholder'
                 forcePlaceholderSize: true
                 forceHelperSize: true
                 containment: @dom

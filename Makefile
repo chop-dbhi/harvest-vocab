@@ -1,4 +1,4 @@
-STATIC_DIR = vocab/static/vocab
+STATIC_DIR = ./vocab/static/vocab
 COFFEE_DIR = ${STATIC_DIR}/scripts/coffeescript
 JS_SRC_DIR = ${STATIC_DIR}/scripts/javascript/src
 JS_MIN_DIR = ${STATIC_DIR}/scripts/javascript/min
