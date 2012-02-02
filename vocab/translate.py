@@ -18,26 +18,26 @@ class VocabularyTranslator(AbstractTranslator):
 
         through = self.through_model
 
-        value = field.model.objects.filter(pk__in=value)
+        from avocado.models import Field
+        pk_field = Field.objects.get_by_natural_key(through._meta.app_label,
+            through._meta.module_name, through.objects.object_field.name)
 
-        # Start with an empty condition
         condition = Q()
-
         if operator.operator == 'all':
-            ids = through.objects.requires_all(value)
-            if ids:
-                condition = self._condition(field, inlist, ids, using)
+            objects = field.model.objects.filter(pk__in=value)
+            ids = through.objects.requires_all(objects)
+            condition = self._condition(pk_field, inlist, ids, using)
         elif operator.operator == '-all':
-            ids = through.objects.not_all(value)
-            if ids:
-                condition = self._condition(field, inlist, ids, using)
+            objects = field.model.objects.filter(pk__in=value)
+            ids = through.objects.not_all(objects)
+            condition = self._condition(pk_field, inlist, ids, using)
         elif operator.operator == 'only':
-            ids = through.objects.only(value)
-            if ids:
-                condition = self._condition(field, inlist, ids, using)
+            objects = field.model.objects.filter(pk__in=value)
+            ids = through.objects.only(objects)
+            condition = self._condition(pk_field, inlist, ids, using)
         else:
-            for item in value:
-                descendants = field.model.objects.descendants(item.pk, include_self=True)
+            for pk in value:
+                descendants = field.model.objects.descendants(pk, include_self=True)
                 condition = condition | self._condition(field, operator, descendants, using)
 
         new_value = field.model.objects.filter(pk__in=value)\

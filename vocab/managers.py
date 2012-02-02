@@ -1,4 +1,5 @@
 from django.db import models, transaction, connection
+from django.db.models.sql import RawQuery
 
 quote_name = connection.ops.quote_name
 
@@ -73,7 +74,7 @@ class ItemIndexThroughManager(models.Manager):
                 'where_condition': where_conditions,
             })
 
-        return query
+        return RawQuery(query, using=self.db)
 
     def requires_all(self, terms):
         "Returns through objects that are associated with 'all' of the given terms."
@@ -84,10 +85,8 @@ class ItemIndexThroughManager(models.Manager):
 
         # Raw queries are lightly wrapped cursors and are not pickleable so we must
         # evaluate it here
-        ids = [x.id for x in self.raw(query)]
-        if not ids:
-            return []
-        return self.object_field.model.objects.db_manager(self.db).filter(pk__in=ids)
+        ids = list(x[0] for x in query)
+        return ids
 
     def not_all(self, terms):
         "Returns through objects that are _not_ associated with all of the given terms."
@@ -96,10 +95,10 @@ class ItemIndexThroughManager(models.Manager):
         where_condition = self._construct_where_condition(subqueries, 0, 'AND', 'OR')
         query = self._get_query(terms, case_statements, where_condition)
 
-        ids = [x.id for x in self.raw(query)]
-        if not ids:
-            return []
-        return self.object_field.model.objects.db_manager(self.db).filter(pk__in=ids)
+        # Raw queries are lightly wrapped cursors and are not pickleable so we must
+        # evaluate it here
+        ids = list(x[0] for x in query)
+        return ids
 
     def only(self, terms):
         "Returns through objects that 'only' match the given terms."
@@ -120,10 +119,10 @@ class ItemIndexThroughManager(models.Manager):
         where_condition = self._construct_where_condition(subqueries, 0, 'OR', 'AND')
         query = self._get_query(subqueries, case_statements, where_condition)
 
-        ids = [x.id for x in self.raw(query)]
-        if not ids:
-            return []
-        return self.object_field.model.objects.db_manager(self.db).filter(pk__in=ids)
+        # Raw queries are lightly wrapped cursors and are not pickleable so we must
+        # evaluate it here
+        ids = list(x[0] for x in query)
+        return ids
 
 
 class ItemIndexManager(models.Manager):

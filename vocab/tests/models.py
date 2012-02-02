@@ -69,8 +69,7 @@ class ItemTestCase(TestCase):
     def test_requires_all(self):
         values = [Ticket.objects.db_manager('alt').get(pk=3), Ticket.objects.db_manager('alt').get(pk=1)]
 
-        p = TicketThrough.objects.db_manager('alt').requires_all(values)
-        id_nums= [c.id for c in p]
+        id_nums = TicketThrough.objects.db_manager('alt').requires_all(values)
 
         self.assertEqual(list(id_nums), [1,3])
         holders = TicketHolder.objects.filter(id__in=id_nums).values_list('name', flat=True)
@@ -80,8 +79,7 @@ class ItemTestCase(TestCase):
     def test_not_all(self):
         values = [Ticket.objects.db_manager('alt').get(pk=1), Ticket.objects.db_manager('alt').get(pk=5)]
 
-        p = TicketThrough.objects.db_manager('alt').not_all(values)
-        id_nums= [c.id for c in p]
+        id_nums = TicketThrough.objects.db_manager('alt').not_all(values)
 
         self.assertEqual(list(id_nums), [1,2])
         holders = TicketHolder.objects.filter(id__in=id_nums).values_list('name', flat=True)
@@ -91,8 +89,7 @@ class ItemTestCase(TestCase):
     def test_only(self):
         values = [Ticket.objects.db_manager('alt').get(pk=1), Ticket.objects.db_manager('alt').get(pk=5), Ticket.objects.db_manager('alt').get(pk=6)]
 
-        p = TicketThrough.objects.db_manager('alt').only(values)
-        id_nums= [c.id for c in p]
+        id_nums = TicketThrough.objects.db_manager('alt').only(values)
 
         self.assertEqual(list(id_nums), [3])
         holders = TicketHolder.objects.filter(id__in=id_nums).values_list('name', flat=True)
