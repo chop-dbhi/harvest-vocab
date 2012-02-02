@@ -23,15 +23,15 @@ class VocabularyTranslator(AbstractTranslator):
             through._meta.module_name, through.objects.object_field.name)
 
         condition = Q()
-        if operator.operator == 'all':
+        if operator.uid == 'all':
             objects = field.model.objects.filter(pk__in=value)
             ids = through.objects.requires_all(objects)
             condition = self._condition(pk_field, inlist, ids, using)
-        elif operator.operator == '-all':
+        elif operator.uid == '-all':
             objects = field.model.objects.filter(pk__in=value)
             ids = through.objects.not_all(objects)
             condition = self._condition(pk_field, inlist, ids, using)
-        elif operator.operator == 'only':
+        elif operator.uid == 'only':
             objects = field.model.objects.filter(pk__in=value)
             ids = through.objects.only(objects)
             condition = self._condition(pk_field, inlist, ids, using)

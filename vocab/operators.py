@@ -1,4 +1,4 @@
-from avocado.fields.operators import SequenceOperator, Exact, NotExact
+from avocado.fields.operators import SequenceOperator
 
 class RequireAll(SequenceOperator):
     join_operator = 'and'
