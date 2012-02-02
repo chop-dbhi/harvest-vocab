@@ -171,14 +171,29 @@
     }
 
     .vocab-staging {
-        padding: 0;
-        list-style: none;
 
-        > li {
-            position: relative;
-            margin-bottom: 5px;
+        ul {
+            min-height: 35px;
+            padding: 0;
+            list-style: none;
+
+            &.placeholder {
+                min-height: 33px;
+                border: 1px dashed #aaa;
+                background-color: #fff;
+            }
+        }
+
+        li {
+            cursor: move;
             font-size: 12px;
-            padding: 5px 0;
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            border-top: none;
+
+            &:first-child {
+                border-top: 1px solid #ddd;
+            }
 
             .text {
                 @include inline-block;
@@ -186,74 +201,25 @@
                 overflow: hidden;
                 white-space: nowrap;
                 text-overflow: ellipsis;
-                margin-left: 65px;
             }
 
-            .icon {
-                @include inline-block;
-                position: absolute;
-                left: 0;
-                width: 48px;
-                margin-right: 5px;
-                padding: 0 5px;
-                border-right: 1px solid #ccc;
-            }
-
-            .clear {
-                @include inline-block;
-                position: absolute;
-                right: 0;
-                margin-left: 5px;
-                padding: 0 5px;
-                border-left: 1px solid #ccc;
-                opacity: 0.5;
-
-                &:hover {
-                    opacity: 1;
-                }
-            }
-
-            &.require {
-                @include clean-button(#e2f0c8);
-                .icon, .clear {
-                    border-color: darken(#e2f0c8, 30);
-                }
-            }
-            &.exclude {
-                @include clean-button(#f0c8c8);
-                .icon, .clear {
-                    border-color: darken(#f0c8c8, 30);
-                }
-            }
-            &.optional {
-                @include clean-button(#eee);
-                .icon, .clear {
-                    border-color: darken(#ddd, 30);
-                }
+            button {
+                margin-right: 10px;
             }
         }
     }
+}
 
-    .vocab-staging-operations {
-        @include inline-block;
-        @include border-radius(3px);
-        @include box-shadow(0 5px 10px #333);
-        list-style: none;
-        padding: 0;
-        background-color: #fff;
-        font-size: 12px;
-        font-weight: bold;
-        display: none;
-        position: absolute;
-        z-index: 1000;
+#vocab-optional li {
+    background-color: #eee;
+}
 
-        li {
-            @include border-radius(3px);
-            cursor: pointer;
-            padding: 3px 5px;
-            &:hover {
-                background-color: #eee;
-            }
-        }
-    }
+#vocab-require li {
+    background-color: #dbfed8;
+    border-color: darken(#dbfed8, 20);
+}
+
+#vocab-exclude li {
+    background-color: #ffdbdc;
+    border-color: darken(#ffdbdc, 10);
 }

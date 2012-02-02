@@ -2,6 +2,7 @@ define [
     'jquery'
     'underscore'
     'cilantro/define/viewelement'
+    'order!vendor/jquery.ui'
 ], ($, _, ViewElement) ->
 
     # Breadcrumbs navigation while in the browse mode
@@ -57,13 +58,13 @@ define [
     # results, to the parent view in the browse mode
     stagedTemplate = '''
         <li data-id="<%= id %>" <% if (!terminal) { %>class="folder"<% } %>>
-            <span class="icon">optional</span>
+            <button class=button-remove>&dash;</button>
             <% if (search_only) { %>
                 <span class=text><%= name %></span>
             <% } else { %>
                 <a class=text href="<%= parent.uri %>"><%= name %></a>
             <% } %>
-            <span class="clear">X</span>
+        </li>
     '''
 
     # Container for all components. Includes the tabs for switching between
@@ -98,13 +99,19 @@ define [
 
                 <h2>Selected <%= title %></h2>
 
-                <ul class=vocab-staging-operations>
-                    <li class="optional">optional</li>
-                    <li class="require">require</li>
-                    <li class="exclude">exclude</li>
-                </ul>
+                <small>Drag a <%= title.toLowerCase() %> to any bucket to customize
+                your query.</small>
 
-                <ul class=vocab-staging></ul>
+                <div class=vocab-staging>
+                    <h3>At least one</h3>
+                    <ul id=vocab-optional class=placeholder></ul>
+
+                    <h3>Require</h3>
+                    <ul id=vocab-require class=placeholder></ul>
+
+                    <h3>Exclude</h3>
+                    <ul id=vocab-exclude class=placeholder></ul>
+                </div>
 
             </div>
         </div>
@@ -114,9 +121,6 @@ define [
         require: 'all'
         exclude: '-all'
         optional: 'in'
-        'all': 'require'
-        '-all': 'exclude'
-        'in': 'optional'
 
     objectIsEmpty = (obj) ->
         for key of obj
@@ -175,7 +179,7 @@ define [
         # Renders the search interface
         _renderSearch: (dom) ->
             search = $('.vocab-search', dom)
-            results = $('.vocab-search-results', dom)
+            results = @searchResults = $('.vocab-search-results', dom)
 
             results.on 'click', 'button', (event) =>
                 target = $(event.currentTarget).parent()
@@ -204,41 +208,50 @@ define [
 
         # Render the staging area
         _renderStaging: (dom) ->
-            vocabOperations = $('.vocab-staging-operations', dom)
-            @stagedItems = stagedItems = $('.vocab-staging', dom)
+            stagedItems = $('.vocab-staging', dom)
 
             self = @
-            stagedItems.on 'click', 'li .icon', (event) ->
-                # Remove any previous bound event handlers
-                vocabOperations.off()
+            sortOptions =
+                forcePlaceholderSize: true
+                forceHelperSize: true
+                containment: @dom
+                opacity: 0.5
+                cursor: 'move'
+                connectWith: '.vocab-staging > ul'
 
-                icon = $(@)
-                item = icon.parent()
+                receive: (event, ui) ->
+                    target = $(@)
+                    if target.children().length == 1
+                        target.removeClass('placeholder')
+                    if ui.sender.children().length == 0
+                        ui.sender.addClass('placeholder')
 
-                # Temporarily bind the operation list for the duration the focus
-                vocabOperations.on 'click', 'li', (event) ->
-                    operation = $(@)
-                    icon.text(operation.text())
-                    item.removeClass('optional require exclude')
-                    item.addClass(operation.prop('className'))
-                    self.datasource[item.data('id')] = OPERATIONS[operation.prop('className')]
-                    vocabOperations.hide()
+                    self.datasource[ui.item.data('id')] = target.data('operator')
 
-                # Position the operation list relative to the current item
-                position = item.position()
-                vocabOperations.css
-                    top: position.top - item.height() + 1
-                    left: position.left + 1
-                .show()
+            optionalTarget = $('#vocab-optional', dom).sortable sortOptions
+            optionalTarget.data('operator', 'in')
 
-            stagedItems.on 'click', 'li .clear', (event) =>
+            excludeTarget = $('#vocab-exclude', dom).sortable sortOptions
+            excludeTarget.data('operator', '-all')
+
+            requireTarget = $('#vocab-require', dom).sortable sortOptions
+            requireTarget.data('operator', 'all')
+
+            @targets =
+                'in': optionalTarget
+                'all': requireTarget
+                '-all': excludeTarget
+
+            # Remove this item altogether
+            stagedItems.on 'click', 'li button', (event) =>
                 item = $(event.target).parent()
-                item.hide()
                 @unstageItem(item.data('id'))
+                if item.siblings().length == 0
+                    item.parent().addClass('placeholder')
+                item.remove()
                 @refreshResultState()
 
-                # Remove from data source...
-
+            # Link to in-browse mode
             stagedItems.on 'click', 'a', (event) =>
                 @_showItemBrowser(event.currentTarget)
                 return false
@@ -252,14 +265,17 @@ define [
             # the fragment
             @_renderSearch(dom)
             @_renderStaging(dom)
+
             if not @viewset.search_only
                 @_renderBrowse(dom)
                 @loadBrowseList()
 
         stageItem: (node, operator=OPERATIONS.optional) ->
             if not @datasource[node.id]
-                li = @renderListElement(node, stagedTemplate, operator)
-                @stagedItems.append li
+                li = @renderListElement node, stagedTemplate, true
+                target = @targets[operator]
+                target.removeClass('placeholder')
+                target.append li
             @datasource[node.id] = operator
             @refreshResultState()
 
@@ -268,27 +284,38 @@ define [
             delete @datasource[id]
             @refreshResultState()
 
+        # Constructs the query that gets passed up to the main View class.
+        # The `custom` property is set to bypass validation in the View, thus
+        # ensure this structure is valid!
         constructQuery: ->
-            ops = {}
+            operators = {}
             data = concept_id: @concept_pk, custom: true
 
+            if objectIsEmpty(@datasource)
+                event = $.Event 'InvalidInputEvent'
+                event.ephemeral = true
+                event.message = 'No value has been specified.'
+                @dom.trigger event
+                return
+
             # Iterate over the datasource hash and populate an object of
-            # operation arrays
+            # operator arrays
             for key, value of @datasource
-                if not ops[value] then ops[value] = []
-                ops[value].push(key)
+                if not operators[value] then operators[value] = []
+                operators[value].push(key)
 
             # Clear the value
-            if (len = _.keys(ops).length) is 0
+            if (len = _.keys(operators).length) is 0
                 data.value = undefined
             else if len is 1
                 data.id = @viewset.pk
-                data.value = ops[value]
+                data.value = operators[value]
                 data.operator = value
-            # Multiple operations require nesting
+
+            # Multiple operators require nesting
             else
                 children = []
-                for key, value of ops
+                for key, value of operators
                     children.push id: @viewset.pk, value: value, operator: key, concept_id: @concept_pk
                 data.type = 'and'
                 data.children = children
@@ -340,8 +367,8 @@ define [
                     nodes = data
 
                 # Render each node
-                for n in nodes
-                    li = @renderListElement(n, browseTemplate)
+                for node in nodes
+                    li = @renderListElement node, browseTemplate
                     @browseResults.append li
 
                 # Update the breadcrumbs to reflect the hierarchy state
@@ -354,28 +381,29 @@ define [
 
         # Handles some standard logic for determing the appropriate parent
         # node (and uri) for the template
-        renderListElement: (node, template, operator=OPERATIONS.optional) ->
+        renderListElement: (node, template) ->
             unless node.parent
                 if not node.ancestors or node.ancestors.length is 0
                     node.parent = uri: @viewset.directory
                 else
                     node.parent = uri: node.ancestors[0].uri
             node.search_only = @viewset.search_only
-            li = $ _.template template, node
-            optext = OPERATIONS[operator]
-            li.addClass(optext).find('.icon').text(optext)
-            li.data node
-            return li
+
+            return $(_.template template, node).data(node)
 
         # Updates the various lists with the current state
         refreshResultState: ->
             # Return to default state (enabled)
-            $('li', @browseResults).removeClass 'added'
-            $('button', @browseResults).attr 'disabled', false
+            if not @viewset.search_only
+                $('li', @browseResults).removeClass 'added'
+                $('button', @browseResults).attr 'disabled', false
             $('li', @searchResults).removeClass 'added'
             $('button', @searchResults).attr 'disabled', false
 
             # Disable items that have been staged
             for id of @datasource
-                $('li[data-id=' + id + ']', @browseResults).addClass('added').find('button').attr 'disabled', true
-                $('li[data-id=' + id + ']', @searchResults).addClass('added').find('button').attr 'disabled', true
+                if not @viewset.search_only
+                    @browseResults.find('li[data-id=' + id + ']').addClass('added')
+                        .find('button').attr('disabled', true)
+                @searchResults.find('li[data-id=' + id + ']').addClass('added')
+                    .find('button').attr('disabled', true)

@@ -1,18 +1,10 @@
 from avocado.fields.operators import SequenceOperator, Exact, NotExact
 
 class RequireAll(SequenceOperator):
+    join_operator = 'and'
     short_name = 'require all'
     verbose_name = 'requires all of'
     operator = 'all'
-
-    def text(self, value):
-        value = map(self.stringify, value)
-        if len(value) == 1:
-            if self.negated:
-                return '%s %s' % (NotExact.verbose_name, value[0])
-            return '%s %s' % (Exact.verbose_name, value[0])
-        value = ', '.join(value[:-1]) + ' and %s' % value[-1]
-        return '%s %s' % (self.verbose_name, value)
 
 
 class NotAll(RequireAll):
