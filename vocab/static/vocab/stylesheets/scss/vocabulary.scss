@@ -210,6 +210,31 @@
     }
 }
 
+#vocab-exclude-operator {
+    @include inline-block;
+    position: relative;
+    background: transparent url(../../images/down-arrow.gif) no-repeat right;
+    padding-right: 14px;
+
+    h3 {
+        margin: 0;
+    }
+
+    select {
+        -webkit-appearance: none;
+        -khtml-appearance: none;
+        appearance: none;
+        opacity: 0;
+        font-size: 1.17em;
+        font-weight: bold;
+        padding-right: 10px;
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 10;
+    }
+}
+
 #vocab-optional li {
     background-color: #eee;
 }

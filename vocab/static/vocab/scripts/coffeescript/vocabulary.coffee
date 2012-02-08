@@ -58,7 +58,7 @@ define [
     # results, to the parent view in the browse mode
     stagedTemplate = '''
         <li data-id="<%= id %>" <% if (!terminal) { %>class="folder"<% } %>>
-            <button class=button-remove>&dash;</button>
+            <button class=button-remove>-</button>
             <% if (search_only) { %>
                 <span class=text><%= name %></span>
             <% } else { %>
@@ -108,7 +108,13 @@ define [
                     <h3>Require All</h3>
                     <ul id=vocab-require class=placeholder></ul>
 
-                    <h3>Exclude All</h3>
+                    <div id=vocab-exclude-operator>
+                        <h3>Exclude Any Of These</h3>
+                        <select>
+                            <option value="-in">Exclude Any Of These</option>
+                            <option value="-all">Exclude All Of These</option>
+                        </select>
+                    </div>
                     <ul id=vocab-exclude class=placeholder></ul>
                 </div>
 
@@ -116,10 +122,8 @@ define [
         </div>
     '''
 
-    OPERATIONS =
-        require: 'all'
-        exclude: '-all'
-        optional: 'in'
+    DEFAULT_OPERATOR = 'in'
+    EXCLUDE_OPERATOR = '-in'
 
     objectIsEmpty = (obj) ->
         for key of obj
@@ -218,21 +222,31 @@ define [
                 opacity: 0.5
                 cursor: 'move'
                 connectWith: '.vocab-staging > ul'
-
                 receive: (event, ui) ->
                     target = $(@)
+
                     if target.children().length == 1
                         target.removeClass('placeholder')
+
                     if ui.sender.children().length == 0
                         ui.sender.addClass('placeholder')
 
-                    self.datasource[ui.item.data('id')] = target.data('operator')
+                    # Move from one list to another, remove previous operator
+                    id = ui.item.data('id')
+                    self.datasource[id].push(target.data('operator'))
+
+                    idx = self.datasource[id].indexOf(ui.sender.data('operator'))
+                    self.datasource[id].splice(idx, 1)
 
             optionalTarget = $('#vocab-optional', dom).sortable sortOptions
             optionalTarget.data('operator', 'in')
 
+            excludeText = $('#vocab-exclude-operator h3', dom)
+            @excludeSelect = excludeSelect = $('#vocab-exclude-operator select', dom).on 'change', ->
+                excludeText.text(excludeSelect.find(':selected').text())
+
             excludeTarget = $('#vocab-exclude', dom).sortable sortOptions
-            excludeTarget.data('operator', '-all')
+            excludeTarget.data('operator', '-x')
 
             requireTarget = $('#vocab-require', dom).sortable sortOptions
             requireTarget.data('operator', 'all')
@@ -240,12 +254,12 @@ define [
             @targets =
                 'in': optionalTarget
                 'all': requireTarget
-                '-all': excludeTarget
+                '-x': excludeTarget
 
             # Remove this item altogether
             stagedItems.on 'click', 'li button', (event) =>
                 item = $(event.target).parent()
-                @unstageItem(item.data('id'))
+                @unstageItem(item.data('id'), item.parent().data('operator'))
                 if item.siblings().length == 0
                     item.parent().addClass('placeholder')
                 item.remove()
@@ -270,25 +284,46 @@ define [
                 @_renderBrowse(dom)
                 @loadBrowseList()
 
-        stageItem: (node, operator=OPERATIONS.optional) ->
-            if not @datasource[node.id]
+        stageItem: (node, operator=DEFAULT_OPERATOR) ->
+            # Map to generic exclude operator
+            if operator in ['-all', '-in']
+                operator = '-x'
+
+            # Assume this is already present in the datasource
+            if typeof node is Number
+                id = node
+            else
+                id = node.id
+                # Does not exist in any bucket,
+                if not @datasource[id]
+                    @datasource[id] = []
                 li = @renderListElement node, stagedTemplate, true
                 target = @targets[operator]
                 target.removeClass('placeholder')
                 target.append li
-            @datasource[node.id] = operator
+            @datasource[id].push operator
             @refreshResultState()
 
-        unstageItem: (id) ->
-            # Remove from the datasource
-            delete @datasource[id]
-            @refreshResultState()
+        unstageItem: (id, operator) ->
+            idx = @datasource[id].indexOf(operator)
+            # Splice out the operator for this id
+            if idx > -1
+                @datasource[id].splice(idx, 1)
+                # Delete the key, so a second check for an empty array does not
+                # need to be performed elsewhere
+                if not @datasource[id].length
+                    delete @datasource[id]
+                @refreshResultState()
 
         # Constructs the query that gets passed up to the main View class.
         # The `custom` property is set to bypass validation in the View, thus
         # ensure this structure is valid!
         constructQuery: ->
-            operators = {}
+            operators =
+                '-x': []
+                'all': []
+                'in': []
+
             data = concept_id: @concept_pk, custom: true
 
             if objectIsEmpty(@datasource)
@@ -300,17 +335,24 @@ define [
 
             # Iterate over the datasource hash and populate an object of
             # operator arrays
-            for key, value of @datasource
-                if not operators[value] then operators[value] = []
-                operators[value].push(key)
+            for key, ops of @datasource
+                for op in ops
+                    operators[op].push(key)
 
-            # Clear the value
-            if (len = _.keys(operators).length) is 0
-                data.value = undefined
-            else if len is 1
+            # Clean up unused operator arrays
+            _.each operators, (values, key) ->
+                if not values.length then delete operators[key]
+
+            # Excluded terms, swap in the real operator
+            if operators['-x']
+                operators[@excludeSelect.val()] = operators['-x']
+                delete operators['-x']
+
+            # Single operator
+            if (keys = _.keys(operators)).length is 1
                 data.id = @viewset.pk
-                data.value = operators[value]
-                data.operator = value
+                data.value = operators[keys[0]]
+                data.operator = keys[0]
 
             # Multiple operators require nesting
             else
@@ -335,6 +377,10 @@ define [
                     self._updateDS(data.value, data.operator)
 
         _updateDS: (ids, operator) ->
+            if operator in ['-in', '-all']
+                @excludeSelect.val(operator)
+                @excludeSelect.siblings().text(@excludeSelect.find(':selected').text())
+
             self = @
             $.each ids, (index, id) ->
                 $.ajax
