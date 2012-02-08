@@ -76,15 +76,25 @@ class ItemTestCase(TestCase):
 
         self.assertEqual(list(holders), ['Ada Lovelace', 'Grace Hopper'])
 
-    def test_not_all(self):
+    def test_excludes_all(self):
         values = [Ticket.objects.db_manager('alt').get(pk=1), Ticket.objects.db_manager('alt').get(pk=5)]
 
-        id_nums = TicketThrough.objects.db_manager('alt').not_all(values)
+        id_nums = TicketThrough.objects.db_manager('alt').excludes_all(values)
 
         self.assertEqual(list(id_nums), [1,2])
         holders = TicketHolder.objects.filter(id__in=id_nums).values_list('name', flat=True)
 
         self.assertEqual(list(holders), ['Ada Lovelace', 'Charles Babbage'])
+
+    def test_excludes_any(self):
+        values = [Ticket.objects.db_manager('alt').get(pk=1), Ticket.objects.db_manager('alt').get(pk=2)]
+
+        id_nums = TicketThrough.objects.db_manager('alt').excludes_any(values)
+
+        self.assertEqual(list(id_nums), [2])
+        holders = TicketHolder.objects.filter(id__in=id_nums).values_list('name', flat=True)
+
+        self.assertEqual(list(holders), ['Charles Babbage'])
 
     def test_only(self):
         values = [Ticket.objects.db_manager('alt').get(pk=1), Ticket.objects.db_manager('alt').get(pk=5), Ticket.objects.db_manager('alt').get(pk=6)]

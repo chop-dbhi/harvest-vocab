@@ -88,11 +88,22 @@ class ItemIndexThroughManager(models.Manager):
         ids = list(x[0] for x in query)
         return ids
 
-    def not_all(self, terms):
+    def excludes_all(self, terms):
         "Returns through objects that are _not_ associated with all of the given terms."
         subqueries = [term.descendants(include_self=True) for term in terms]
         case_statements = self._construct_case_statements(subqueries, 1, 0)
         where_condition = self._construct_where_condition(subqueries, 0, 'AND', 'OR')
+        query = self._get_query(terms, case_statements, where_condition)
+
+        # Raw queries are lightly wrapped cursors and are not pickleable so we must
+        # evaluate it here
+        ids = list(x[0] for x in query)
+        return ids
+
+    def excludes_any(self, terms):
+        subqueries = [term.descendants(include_self=True) for term in terms]
+        case_statements = self._construct_case_statements(subqueries, 1, 0)
+        where_condition = self._construct_where_condition(subqueries, 0, 'AND', 'AND')
         query = self._get_query(terms, case_statements, where_condition)
 
         # Raw queries are lightly wrapped cursors and are not pickleable so we must

@@ -26,15 +26,23 @@ class VocabularyTranslator(AbstractTranslator):
         if operator.uid == 'all':
             objects = field.model.objects.filter(pk__in=value)
             ids = through.objects.requires_all(objects)
-            condition = self._condition(pk_field, inlist, ids, using)
+            if ids:
+                condition = self._condition(pk_field, inlist, ids, using)
         elif operator.uid == '-all':
             objects = field.model.objects.filter(pk__in=value)
-            ids = through.objects.not_all(objects)
-            condition = self._condition(pk_field, inlist, ids, using)
+            ids = through.objects.excludes_all(objects)
+            if ids:
+                condition = self._condition(pk_field, inlist, ids, using)
+        elif operator.uid == '-in':
+            objects = field.model.objects.filter(pk__in=value)
+            ids = through.objects.excludes_any(objects)
+            if ids:
+                condition = self._condition(pk_field, inlist, ids, using)
         elif operator.uid == 'only':
             objects = field.model.objects.filter(pk__in=value)
             ids = through.objects.only(objects)
-            condition = self._condition(pk_field, inlist, ids, using)
+            if ids:
+                condition = self._condition(pk_field, inlist, ids, using)
         else:
             for pk in value:
                 descendants = field.model.objects.descendants(pk, include_self=True)
