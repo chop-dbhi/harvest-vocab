@@ -66,42 +66,37 @@ class ItemTestCase(TestCase):
         terminals = Ticket.objects.using('alt').filter(terminal=True).values_list('pk', flat=True)
         self.assertEqual(list(terminals), [2, 6, 7])
 
+    def test_requires_any(self):
+        # Holder must be assigned at least one of the tickets..
+        values = [3]
+        ids = TicketThrough.objects.db_manager('alt').requires_any(values, evaluate=True)
+        holders = TicketHolder.objects.filter(id__in=ids).values_list('pk', flat=True)
+        self.assertEqual(list(holders), [1, 2, 3])
+
     def test_requires_all(self):
-        values = [Ticket.objects.db_manager('alt').get(pk=3), Ticket.objects.db_manager('alt').get(pk=1)]
-
-        id_nums = TicketThrough.objects.db_manager('alt').requires_all(values)
-
-        self.assertEqual(list(id_nums), [1,3])
-        holders = TicketHolder.objects.filter(id__in=id_nums).values_list('name', flat=True)
-
-        self.assertEqual(list(holders), ['Ada Lovelace', 'Grace Hopper'])
+        # Holder must be assigned both tickets..
+        values = [1, 3]
+        ids = TicketThrough.objects.db_manager('alt').requires_all(values, evaluate=True)
+        holders = TicketHolder.objects.filter(id__in=ids).values_list('pk', flat=True)
+        self.assertEqual(list(holders), [1, 3])
 
     def test_excludes_all(self):
-        values = [Ticket.objects.db_manager('alt').get(pk=1), Ticket.objects.db_manager('alt').get(pk=5)]
-
-        id_nums = TicketThrough.objects.db_manager('alt').excludes_all(values)
-
-        self.assertEqual(list(id_nums), [1,2])
-        holders = TicketHolder.objects.filter(id__in=id_nums).values_list('name', flat=True)
-
-        self.assertEqual(list(holders), ['Ada Lovelace', 'Charles Babbage'])
+        # Holder must not be assigned to both tickets..
+        values = [1, 5]
+        ids = TicketThrough.objects.db_manager('alt').excludes_all(values, evaluate=True)
+        holders = TicketHolder.objects.filter(id__in=ids).values_list('pk', flat=True)
+        self.assertEqual(list(holders), [2])
 
     def test_excludes_any(self):
-        values = [Ticket.objects.db_manager('alt').get(pk=1), Ticket.objects.db_manager('alt').get(pk=2)]
-
-        id_nums = TicketThrough.objects.db_manager('alt').excludes_any(values)
-
-        self.assertEqual(list(id_nums), [2])
-        holders = TicketHolder.objects.filter(id__in=id_nums).values_list('name', flat=True)
-
-        self.assertEqual(list(holders), ['Charles Babbage'])
+        # Holder must not be assigned to either tickets..
+        values = [1, 2]
+        ids = TicketThrough.objects.db_manager('alt').excludes_any(values, evaluate=True)
+        holders = TicketHolder.objects.filter(id__in=ids).values_list('pk', flat=True)
+        self.assertEqual(list(holders), [2, 3])
 
     def test_only(self):
-        values = [Ticket.objects.db_manager('alt').get(pk=1), Ticket.objects.db_manager('alt').get(pk=5), Ticket.objects.db_manager('alt').get(pk=6)]
-
-        id_nums = TicketThrough.objects.db_manager('alt').only(values)
-
-        self.assertEqual(list(id_nums), [3])
-        holders = TicketHolder.objects.filter(id__in=id_nums).values_list('name', flat=True)
-
-        self.assertEqual(list(holders), ['Grace Hopper'])
+        # Holder must be assigned to only these tickets..
+        values = [1, 6]
+        ids = TicketThrough.objects.db_manager('alt').only(values, evaluate=True)
+        holders = TicketHolder.objects.filter(id__in=ids).values_list('pk', flat=True)
+        self.assertEqual(list(holders), [3])

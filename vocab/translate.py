@@ -1,8 +1,11 @@
-from django.db.models import Q
+from django.db import connection
 from django.core.exceptions import ImproperlyConfigured
 from avocado.fields.translate import AbstractTranslator
 from avocado.fields.operators import inlist, notinlist
+from avocado.modeltree import trees
 from .operators import requireall, notall, only
+
+qn = connection.ops.quote_name
 
 class VocabularyTranslator(AbstractTranslator):
     through_model = None
@@ -18,42 +21,41 @@ class VocabularyTranslator(AbstractTranslator):
 
         through = self.through_model
 
-        from avocado.models import Field
-        pk_field = Field.objects.get_by_natural_key(through._meta.app_label,
-            through._meta.module_name, through.objects.object_field.name)
-
-        condition = Q()
-        if operator.uid == 'all':
-            objects = field.model.objects.filter(pk__in=value)
-            ids = through.objects.requires_all(objects)
-            if ids:
-                condition = self._condition(pk_field, inlist, ids, using)
-        elif operator.uid == '-all':
-            objects = field.model.objects.filter(pk__in=value)
-            ids = through.objects.excludes_all(objects)
-            if ids:
-                condition = self._condition(pk_field, inlist, ids, using)
+        if operator.uid == 'in':
+            subquery = through.objects.requires_any(value)
         elif operator.uid == '-in':
-            objects = field.model.objects.filter(pk__in=value)
-            ids = through.objects.excludes_any(objects)
-            if ids:
-                condition = self._condition(pk_field, inlist, ids, using)
+            subquery = through.objects.excludes_any(value)
+        elif operator.uid == 'all':
+            subquery = through.objects.requires_all(value)
+        elif operator.uid == '-all':
+            subquery = through.objects.excludes_all(value)
         elif operator.uid == 'only':
-            objects = field.model.objects.filter(pk__in=value)
-            ids = through.objects.only(objects)
-            if ids:
-                condition = self._condition(pk_field, inlist, ids, using)
+            subquery = through.objects.only(value)
         else:
-            for pk in value:
-                descendants = field.model.objects.descendants(pk, include_self=True)
-                condition = condition | self._condition(field, operator, descendants, using)
+            raise ImproperlyConfigured()
+
+        tree = trees[using]
+        joins = tree.get_all_join_connections(tree.path_to(through.objects.object_field.rel.to))
+        # Skip the first join connection since it
+        tables = []
+        where = []
+
+        if len(joins) > 1:
+            for left, right, left_id, right_id in joins[1:]:
+                tables.append(right)
+                where.append('%s.%s = %s.%s' % (left, left_id, right, right_id))
+
+        where.append('%(object_table)s.%(object_id)s in %(subquery)s' % {
+            'object_table': qn(through.objects.object_field.rel.to._meta.db_table),
+            'object_id': qn(through.objects.object_field.rel.to._meta.pk.column),
+            'subquery': subquery,
+        })
 
         new_value = field.model.objects.filter(pk__in=value)\
             .values_list(field.model.description_field, flat=True)
 
         return {
-            'condition': condition,
-            'annotations': {},
+            'extra': {'where': where, 'tables': tables},
             'cleaned_data': {
                 'operator': operator,
                 'value': value,

@@ -143,7 +143,7 @@
     "model": "tests.ticketthrough", 
     "fields": {
       "ticket": 7, 
-      "holder": 2
+      "holder": 3
     }
   }
 ]

@@ -1,0 +1,6 @@
+[run]
+include = vocab/*.py
+source = vocab
+
+[html]
+directory = docs/coverage

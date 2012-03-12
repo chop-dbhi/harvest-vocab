@@ -1,6 +1,46 @@
 Harvest-Vocab
 =============
 
+Quick Setup
+-----------
+**1. Setup the models**
+```python
+# Subclass AbstractItem with your model of interest. Add a ManyToManyField
+# to the target object this hierarchy is related to.
+class Diagnosis(AbstractItem):
+    patients = models.ManyToManyField(Patient, through='PatientDiagnosis')
+    ...
+
+# Create a many-to-many through model with the correct foreign keys
+class PatientDiagnosis(models.Model):
+    diagnosis = models.ForeignKey(Diagnosis)
+    patient = models.ForeignKey(Patient)
+    ...
+
+    # pass the field names of the term and related object
+    objects = ItemThroughManager('diagnosis', 'patient')
+
+# Create the index model. Note the foreign keys must be named exactly
+# as show below including the related_name fields
+class DiagnosisIndex(AbstractItemIndex):
+    item = models.ForeignKey(Diagnosis, related_name='item_indexes')
+    parent = models.ForeignKey(Diagnosis, related_name='parent_indexes')
+```
+
+**2. Build Index**
+```python
+>>> DiagnosisIndex.objects.index()
+```
+
+**3. Use Pivot Queries**
+```python
+>>> diagnoses = Diagnosis.objects.filter(pk__in=[1, 2])
+>>> patient_ids = PatientDiagnosis.objects.requires_all(diagnoses)
+>>> patients = Patient.objects.filter(pk__in=patient_ids)
+```
+
+Introduction
+------------
 Harvest-Vocab provides abstract models for defining vocabulary-like models
 and building a corresponding index for hierarchical _self-related_ data.
 
@@ -56,4 +96,20 @@ this way:
 condition = Q(item__code='367') | Q(parent__code='367')
 item_ids = DiagnosisIndex.objects.filter(condition).values_list('item__id', flat=True)
 diagnoses = Diagnosis.objects.filter(id__in=item_ids)
+```
+
+Harvest Integration
+-------------------
+Harvest-Vocab comes bundled with a custom Avocado translator. Subclass the
+translator `vocab.translate.VocabularyTranslator` and set the `through_model`
+class attribute:
+
+```python
+from avocado.fields import translate
+from vocab.translate import VocabularyTranslator
+from myapp.models import PatientDiagnosis
+
+@translate.register
+class DiagnosisTranslator(VocabularyTranslator):
+    through_model = PatientDiagnosis
 ```

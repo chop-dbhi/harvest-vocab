@@ -83,7 +83,7 @@ setup(
     packages = packages,
     cmdclass = cmdclasses,
 
-    install_requires = ['cilantro>=0.9.1b7', 'avocado>=0.9b11'],
+    install_requires = ['cilantro>=0.9.1b7', 'avocado>=0.9.1b4'],
 
     data_files = data_files,
     classifiers = [
