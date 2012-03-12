@@ -13,11 +13,11 @@ class ItemManager(models.Manager):
         return self.get_query_set().get(pk=pk).descendants(*args, **kwargs)
 
 
-class ItemIndexThroughManager(models.Manager):
+class ItemThroughManager(models.Manager):
     def __init__(self, term_field_name, object_field_name):
         self._term_field_name = term_field_name
         self._object_field_name = object_field_name
-        super(ItemIndexThroughManager, self).__init__()
+        super(ItemThroughManager, self).__init__()
 
     @property
     def term_field(self):

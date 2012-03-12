@@ -1,7 +1,7 @@
 from django.db import models
 from django.test import TestCase
 from vocab.models import AbstractItem, AbstractItemIndex
-from vocab.managers import ItemIndexThroughManager
+from vocab.managers import ItemThroughManager
 
 class Ticket(AbstractItem):
     search_fields = ('name', 'description')
@@ -25,7 +25,7 @@ class TicketThrough(models.Model):
     holder = models.ForeignKey(TicketHolder, related_name = 'holder_thr')
     ticket = models.ForeignKey(Ticket, null=True, related_name='ticket_thr')
 
-    objects = ItemIndexThroughManager('ticket', 'holder')
+    objects = ItemThroughManager('ticket', 'holder')
 
 
 class ItemTestCase(TestCase):
