@@ -43,9 +43,10 @@ class VocabularyTranslator(AbstractTranslator):
         if len(joins) > 1:
             for left, right, left_id, right_id in joins[1:]:
                 tables.append(right)
-                where.append('%s.%s = %s.%s' % (left, left_id, right, right_id))
+                where.append('%s.%s = %s.%s' % (qn(left), qn(left_id), qn(right), qn(right_id)))
 
-        where.append('%(object_table)s.%(object_id)s in %(subquery)s' % {
+        where.append('%(object_table)s.%(object_id)s %(operator)s %(subquery)s' % {
+            'operator': 'NOT IN' if operator.negated else 'IN',
             'object_table': qn(through.objects.object_field.rel.to._meta.db_table),
             'object_id': qn(through.objects.object_field.rel.to._meta.pk.column),
             'subquery': subquery,

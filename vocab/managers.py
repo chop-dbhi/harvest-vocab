@@ -66,8 +66,6 @@ class ItemThroughManager(models.Manager):
         """
         if where_equals is True:
             statement = ' %(column_alias)s > 0 '
-        elif where_equals is False:
-            statement = ' %(column_alias)s = 0 '
         else:
             statement = ' %(column_alias)s = %(where_equals)s '
 
@@ -125,14 +123,14 @@ class ItemThroughManager(models.Manager):
         if type(items[0]) is not int:
             items = [term.pk for term in items]
         case_statements = self._construct_case_statements(items, 1, 0)
-        where_condition = self._construct_where_condition(items, False, 'AND')
+        where_condition = self._construct_where_condition(items, True, 'AND')
         return self._get_query(case_statements, where_condition, evaluate)
 
     def excludes_any(self, items, evaluate=False):
         if type(items[0]) is not int:
             items = [term.pk for term in items]
         case_statements = self._construct_case_statements(items, 1, 0)
-        where_condition = self._construct_where_condition(items, False, 'OR')
+        where_condition = self._construct_where_condition(items, True, 'OR')
         return self._get_query(case_statements, where_condition, evaluate)
 
     def only(self, items, evaluate=False):

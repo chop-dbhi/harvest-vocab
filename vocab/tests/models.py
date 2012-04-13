@@ -84,15 +84,15 @@ class ItemTestCase(TestCase):
         # Holder must not be assigned to both tickets..
         values = [1, 5]
         ids = TicketThrough.objects.db_manager('alt').excludes_all(values, evaluate=True)
-        holders = TicketHolder.objects.filter(id__in=ids).values_list('pk', flat=True)
-        self.assertEqual(list(holders), [2])
+        holders = TicketHolder.objects.exclude(id__in=ids).values_list('pk', flat=True)
+        self.assertEqual(list(holders), [1, 2])
 
     def test_excludes_any(self):
         # Holder must not be assigned to either tickets..
         values = [1, 2]
         ids = TicketThrough.objects.db_manager('alt').excludes_any(values, evaluate=True)
-        holders = TicketHolder.objects.filter(id__in=ids).values_list('pk', flat=True)
-        self.assertEqual(list(holders), [2, 3])
+        holders = TicketHolder.objects.exclude(id__in=ids).values_list('pk', flat=True)
+        self.assertEqual(list(holders), [2])
 
     def test_only(self):
         # Holder must be assigned to only these tickets..
