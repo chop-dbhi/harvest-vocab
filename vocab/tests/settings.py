@@ -10,6 +10,15 @@ DATABASES = {
 }
 
 INSTALLED_APPS = (
+    'django.contrib.auth',
+    'django.contrib.sites',
+    'django.contrib.contenttypes',
     'vocab',
     'vocab.tests',
+    'avocado'
 )
+MODELTREES ={
+        'default': {
+                'model': "tests.ticket",
+            }
+        }

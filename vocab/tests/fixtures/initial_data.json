@@ -6,7 +6,7 @@
       "terminal": false, 
       "name": "Fix IE positioning", 
       "parent": null, 
-      "description": null
+      "description": "Ticket 1"
     }
   }, 
   {
@@ -16,7 +16,7 @@
       "terminal": true, 
       "name": "Gallery images must be stacked on one another", 
       "parent": 1, 
-      "description": "Add absolute positioning to elements, don't float"
+      "description": "Ticket 2"
     }
   }, 
   {
@@ -26,7 +26,7 @@
       "terminal": false, 
       "name": "Implement automated systems", 
       "parent": null, 
-      "description": null
+      "description": "Ticket 3"
     }
   }, 
   {
@@ -36,7 +36,7 @@
       "terminal": false, 
       "name": "Write deployment script", 
       "parent": 3, 
-      "description": "Use fabric to ease remote deployments"
+      "description": "Ticket 4"
     }
   }, 
   {
@@ -46,7 +46,7 @@
       "terminal": false, 
       "name": "Write deployment configurations for various environments", 
       "parent": 4, 
-      "description": "Use fabric to ease remote deployments"
+      "description": "Ticket 5"
     }
   }, 
   {
@@ -56,7 +56,7 @@
       "terminal": true, 
       "name": "Write cron jobs for backing backing up various databases/repositories", 
       "parent": 3, 
-      "description": "We have VMWare, but we should backup our databases and repositories to the SAN"
+      "description": "Ticket 6"
     }
   }, 
   {
@@ -66,7 +66,7 @@
       "terminal": true, 
       "name": "Write configuration for production application server", 
       "parent": 5, 
-      "description": null
+      "description": "Ticket 7"
     }
   }, 
   {

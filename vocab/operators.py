@@ -1,6 +1,6 @@
-from avocado.fields.operators import SequenceOperator
+from avocado.query.operators import InList, registry
 
-class RequireAll(SequenceOperator):
+class RequireAll(InList):
     join_operator = 'and'
     short_name = 'require all'
     verbose_name = 'requires all of'
@@ -22,3 +22,8 @@ class Only(RequireAll):
 requireall = RequireAll()
 notall = NotAll()
 only = Only()
+
+registry.register(RequireAll, RequireAll.uid)
+registry.register(NotAll, NotAll.uid)
+registry.register(Only, Only.uid)
+
