@@ -1,0 +1,15 @@
+ <li data-id="<%= id %>" <% if (!terminal) { %>class="folder"<% } %>>
+    <button class="button-add">+</button>
+    <span>
+        <% if (search_only) { %>
+            <span><%= name %></span>
+        <% } else { %>
+            <a href="<%= parent.uri %>"><%= name %></a>
+        <% } %>
+        <% if (attrs) { %>
+            <br><small class="info"><% for (var k in attrs) { %>
+                <%= k %>: <%= attrs[k] %>
+            <% } %></small>
+        <% } %>
+    </span>
+</li>

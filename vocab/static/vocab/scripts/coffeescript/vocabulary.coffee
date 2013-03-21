@@ -1,136 +1,25 @@
 define [
-    'jquery'
-    'underscore'
-    'cilantro/define/viewelement'
+    'cilantro'
+    'cilantro/ui',
+    'tpl!templates/vocab-browser/breadcrumbs.html'
+    'tpl!templates/vocab-browser/browse.html'
+    'tpl!templates/vocab-browser/search-results.html'
+    'tpl!templates/vocab-browser/staged.html'
+    'tpl!templates/vocab-browser/vocab-browser.html'
     'order!vendor/jquery.ui'
-], ($, _, ViewElement) ->
-
-    # Breadcrumbs navigation while in the browse mode
-    breadcrumbsTemplate = '''
-        <% for (var b, i = 0; i < breadcrumbs.length; i++) { %>
-            <% b = breadcrumbs[i]; %>
-            <% if (i === (breadcrumbs.length-1)) {%>
-                <span title="<%= b.name %>"><%= b.name %></span>
-            <% } else { %>
-                <a href="<%= b.uri %>" title="<%= b.name %>"><%= b.name %></a> <span class="breadcrumb-arrow">&rarr;</span>
-            <% } %>
-        <% } %>
-    '''
-
-    # Single browsable item. If the item contains children, it will be
-    # clickable to descend to the next level
-    browseTemplate = '''
-        <li data-id="<%= id %>" data-uri="<%= uri %>" <% if (!terminal) { %>class="folder"<% } %>>
-            <button class="button-add">+</button>
-            <span class="name"><%= name %>
-                <% if (attrs) { %>
-                    <br><small class="info"><% for (var k in attrs) { %>
-                        <%= k %>: <%= attrs[k] %>
-                    <% } %></small>
-                <% } %>
-            </span>
-        </li>
-    '''
-
-    # Single search result. Each item links to it's parent view in the browse
-    # mode. This allows for quickly finding items via the search, but then be
-    # able to see where it exists within the hierarchy
-    searchResultsTemplate = '''
-        <li data-id="<%= id %>" <% if (!terminal) { %>class="folder"<% } %>>
-            <button class="button-add">+</button>
-            <span>
-                <% if (search_only) { %>
-                    <span><%= name %></span>
-                <% } else { %>
-                    <a href="<%= parent.uri %>"><%= name %></a>
-                <% } %>
-                <% if (attrs) { %>
-                    <br><small class="info"><% for (var k in attrs) { %>
-                        <%= k %>: <%= attrs[k] %>
-                    <% } %></small>
-                <% } %>
-            </span>
-        </li>
-    '''
-
-    # Single selected item. These are represented in the selected items list
-    # below the browse/search mode container. These items link, like the search
-    # results, to the parent view in the browse mode
-    stagedTemplate = '''
-        <li data-id="<%= id %>" <% if (!terminal) { %>class="folder"<% } %>>
-            <button class=button-remove>-</button>
-            <% if (search_only) { %>
-                <span class=text><%= name %></span>
-            <% } else { %>
-                <a class=text href="<%= parent.uri %>"><%= name %></a>
-            <% } %>
-        </li>
-    '''
-
-    # Container for all components. Includes the tabs for switching between
-    # browse and search modes.
-    vocabBrowserTemplate = '''
-        <div id="vocab-browser-<%= pk %>" class="vocab-browser">
-            <% if (!search_only) { %>
-                <div class="vocab-tabs tabs">
-                    <a class="tab" href="#browse-tab-<%= pk %>">Browse <%= title %></a>
-                    <a class="tab" href="#search-tab-<%= pk %>">Search <%= title %></a>
-                </div>
-            <% } %>
-            <div>
-                <% if (!search_only) { %>
-                    <div id="browse-tab-<%= pk %>">
-                        <div class=vocab-breadcrumbs></div>
-                        <ul class="vocab-browse-results list"></ul>
-                    </div>
-                <% } %>
-
-                <div id="search-tab-<%= pk %>">
-                    <form method="get" action="<%= directory %>">
-                        <input type="text" class="vocab-search" name="q" placeholder="Search...">
-                        <em>Note: only the first 100 results are displayed</em>
-                    </form>
-                    <div>
-                        <ul class="vocab-search-results list">
-                            <li class="start">Enter search terms above. Results can be clicked to go to their location in the Browse tab.</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <h2>Selected <%= title %></h2>
-
-                <div style=text-align:center><em>Drag and drop between buckets to customize your query.</em></div>
-
-                <div class=vocab-staging>
-                    <h3>At Least One</h3>
-                    <ul id=vocab-optional class=placeholder></ul>
-
-                    <h3>Require All</h3>
-                    <ul id=vocab-require class=placeholder></ul>
-
-                    <div id=vocab-exclude-operator>
-                        <h3>Exclude Any Of These</h3>
-                        <select>
-                            <option value="-in">Exclude Any Of These</option>
-                            <option value="-all">Exclude All Of These</option>
-                        </select>
-                    </div>
-                    <ul id=vocab-exclude class=placeholder></ul>
-                </div>
-
-            </div>
-        </div>
-    '''
+], (c, ui,
+    breadcrumbsTemplate, 
+    browseTemplate, 
+    searchResultsTemplate, 
+    stagedTemplate, 
+    vocabBrowserTemplate) ->
 
     DEFAULT_OPERATOR = 'in'
     EXCLUDE_OPERATOR = '-in'
 
-    objectIsEmpty = (obj) ->
-        for key of obj
-            return false
-        return true
+    objectIsEmpty = c._.isEmpty
 
-    ViewElement.extend
+    class VocabForm extends c.ui.ConceptForm
         constructor: (viewset, concept_pk) ->
             @base viewset, concept_pk
             @datasource = {}

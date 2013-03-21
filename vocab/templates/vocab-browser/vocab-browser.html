@@ -1,0 +1,50 @@
+<div id="vocab-browser-<%= pk %>" class="vocab-browser">
+    <% if (!search_only) { %>
+        <div class="vocab-tabs tabs">
+            <a class="tab" href="#browse-tab-<%= pk %>">Browse <%= title %></a>
+            <a class="tab" href="#search-tab-<%= pk %>">Search <%= title %></a>
+        </div>
+    <% } %>
+    <div>
+        <% if (!search_only) { %>
+            <div id="browse-tab-<%= pk %>">
+                <div class=vocab-breadcrumbs></div>
+                <ul class="vocab-browse-results list"></ul>
+            </div>
+        <% } %>
+
+        <div id="search-tab-<%= pk %>">
+            <form method="get" action="<%= directory %>">
+                <input type="text" class="vocab-search" name="q" placeholder="Search...">
+                <em>Note: only the first 100 results are displayed</em>
+            </form>
+            <div>
+                <ul class="vocab-search-results list">
+                    <li class="start">Enter search terms above. Results can be clicked to go to their location in the Browse tab.</li>
+                </ul>
+            </div>
+        </div>
+
+        <h2>Selected <%= title %></h2>
+
+        <div style=text-align:center><em>Drag and drop between buckets to customize your query.</em></div>
+
+        <div class=vocab-staging>
+            <h3>At Least One</h3>
+            <ul id=vocab-optional class=placeholder></ul>
+
+            <h3>Require All</h3>
+            <ul id=vocab-require class=placeholder></ul>
+
+            <div id=vocab-exclude-operator>
+                <h3>Exclude Any Of These</h3>
+                <select>
+                    <option value="-in">Exclude Any Of These</option>
+                    <option value="-all">Exclude All Of These</option>
+                </select>
+            </div>
+            <ul id=vocab-exclude class=placeholder></ul>
+        </div>
+
+    </div>
+</div>

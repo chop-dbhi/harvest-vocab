@@ -1,0 +1,10 @@
+ <li data-id="<%= id %>" data-uri="<%= uri %>" <% if (!terminal) { %>class="folder"<% } %>>
+    <button class="button-add">+</button>
+    <span class="name"><%= name %>
+        <% if (attrs) { %>
+            <br><small class="info"><% for (var k in attrs) { %>
+                <%= k %>: <%= attrs[k] %>
+            <% } %></small>
+        <% } %>
+    </span>
+</li>
