@@ -1,5 +1,4 @@
-<div id="vocab-browser-<%= pk %>" class="vocab-browser">
-    <% if (!search_only) { %>
+<div id="vocab-browser-<%= pk %>" class="vocab-browser"> <% if (!data.search_only) { %>
         <div class="vocab-tabs tabs">
             <a class="tab" href="#browse-tab-<%= pk %>">Browse <%= title %></a>
             <a class="tab" href="#search-tab-<%= pk %>">Search <%= title %></a>
@@ -13,7 +12,7 @@
             </div>
         <% } %>
 
-        <div id="search-tab-<%= pk %>">
+        <div id="search-tab-<%= data.pk %>">
             <form method="get" action="<%= directory %>">
                 <input type="text" class="vocab-search" name="q" placeholder="Search...">
                 <em>Note: only the first 100 results are displayed</em>
@@ -25,7 +24,7 @@
             </div>
         </div>
 
-        <h2>Selected <%= title %></h2>
+        <h2>Selected <%= data.title %></h2>
 
         <div style=text-align:center><em>Drag and drop between buckets to customize your query.</em></div>
 

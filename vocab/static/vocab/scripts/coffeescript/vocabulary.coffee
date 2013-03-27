@@ -17,12 +17,27 @@ define [
     DEFAULT_OPERATOR = 'in'
     EXCLUDE_OPERATOR = '-in'
 
-    objectIsEmpty = c._.isEmpty
-
     class VocabForm extends c.ui.ConceptForm
-        constructor: (viewset, concept_pk) ->
-            @base viewset, concept_pk
-            @datasource = {}
+        className: 'vocab-browser'
+
+        regions:
+            search: '.search'
+            browser: '.browser'
+            optional: '.vocab-optional'
+            require: '.vocab-require'
+            exlcude: '.vocab-exclude'
+
+        template: vocabBrowserTemplate
+
+        onRender: ->
+            # Renders and attaches event handlers the various sections of
+            # the fragment
+            @_renderSearch
+            @_renderStaging
+
+            if not @model.search_only
+                @_renderBrowse
+                @loadBrowseList
 
         # Shows (toggles to) the item browser usually from an in-app link. Only
         # applicable if the browser is rendered to begin with
@@ -43,8 +58,8 @@ define [
             return false
 
         # Renders the browseable hierarchy
-        _renderBrowse: (dom) ->
-            results = @browseResults = $('.vocab-browse-results', dom)
+        _renderBrowse:  ->
+            results = @browseResults = @$('.vocab-browse-results')
 
             results.on 'click', 'button', (event) =>
                 target = $(event.currentTarget).parent()
@@ -56,22 +71,22 @@ define [
                 return false
 
             # Tabs to switch between "browse" and "search" mode
-            @tabs = tabs = $('.vocab-tabs', dom)
+            @tabs = tabs = @$('.vocab-tabs')
             tabs.tabs false, (evt, tab) ->
                 siblings = tabs.find('.tab')
-                siblings.each (i, o) -> $(o.hash, dom).hide()
-                $(tab.prop('hash'), dom).show()
+                siblings.each (i, o) -> @$(o.hash).hide()
+                @$(tab.prop('hash')).show()
 
             # Displays the browse stack which enables returning to a previous
             # level. Delegate click events to breadcrumb anchors
-            @browseBreadcrumbs = $('.vocab-breadcrumbs', dom).on 'click', 'a', (event) =>
+            @browseBreadcrumbs = @$('.vocab-breadcrumbs').on 'click', 'a', (event) =>
                 @loadBrowseList event.target.href
                 return false
 
         # Renders the search interface
-        _renderSearch: (dom) ->
-            search = $('.vocab-search', dom)
-            results = @searchResults = $('.vocab-search-results', dom)
+        _renderSearch:  ->
+            search = @$('.vocab-search')
+            results = @searchResults = @$('.vocab-search-results')
 
             results.on 'click', 'button', (event) =>
                 target = $(event.currentTarget).parent()
@@ -99,8 +114,8 @@ define [
                     results.unblock()
 
         # Render the staging area
-        _renderStaging: (dom) ->
-            stagedItems = $('.vocab-staging', dom)
+        _renderStaging:  ->
+            stagedItems = @$('.vocab-staging')
 
             self = @
             sortOptions =
@@ -127,17 +142,17 @@ define [
                     idx = self.datasource[id].indexOf(ui.sender.data('operator'))
                     self.datasource[id].splice(idx, 1)
 
-            optionalTarget = $('#vocab-optional', dom).sortable sortOptions
+            optionalTarget = @$('#vocab-optional').sortable sortOptions
             optionalTarget.data('operator', 'in')
 
-            excludeText = $('#vocab-exclude-operator h3', dom)
-            @excludeSelect = excludeSelect = $('#vocab-exclude-operator select', dom).on 'change', ->
+            excludeText = @$('#vocab-exclude-operator h3')
+            @excludeSelect = excludeSelect = @$('#vocab-exclude-operator select').on 'change', ->
                 excludeText.text(excludeSelect.find(':selected').text())
 
-            excludeTarget = $('#vocab-exclude', dom).sortable sortOptions
+            excludeTarget = @$('#vocab-exclude').sortable sortOptions
             excludeTarget.data('operator', '-x')
 
-            requireTarget = $('#vocab-require', dom).sortable sortOptions
+            requireTarget = @$('#vocab-require').sortable sortOptions
             requireTarget.data('operator', 'all')
 
             @targets =
@@ -158,20 +173,6 @@ define [
             stagedItems.on 'click', 'a', (event) =>
                 @_showItemBrowser(event.currentTarget)
                 return false
-
-        render: ->
-            # Complete document fragment that contains all elements for the
-            # vocab browser
-            @dom = dom = $ _.template vocabBrowserTemplate, @viewset
-
-            # Renders and attaches event handlers the various sections of
-            # the fragment
-            @_renderSearch(dom)
-            @_renderStaging(dom)
-
-            if not @viewset.search_only
-                @_renderBrowse(dom)
-                @loadBrowseList()
 
         stageItem: (node, operator=DEFAULT_OPERATOR) ->
             # Map to generic exclude operator
@@ -215,7 +216,7 @@ define [
 
             data = concept_id: @concept_pk, custom: true
 
-            if objectIsEmpty(@datasource)
+            if c._.isEmpty(@datasource)
                 event = $.Event 'InvalidInputEvent'
                 event.ephemeral = true
                 event.message = 'No value has been specified.'
@@ -257,7 +258,7 @@ define [
         updateDS: (evt, data) ->
             self = @
             @refreshResultState()
-            unless objectIsEmpty(data)
+            unless c._.isEmpty(data)
                 # Contains more than one operator lists
                 if data.children
                     for child in data.children
@@ -276,10 +277,6 @@ define [
                     url: self.viewset.directory + id + '/'
                     success: (node) ->
                         self.stageItem node, operator
-
-        updateElement: (evt, element) ->
-
-        elementChanged: (evt, element) ->
 
         # Loads a list of items relative to the hierarchy URL. This applies
         # to the browsable list hiearchy
@@ -329,7 +326,7 @@ define [
         # Updates the various lists with the current state
         refreshResultState: ->
             # Return to default state (enabled)
-            if not @viewset.search_only
+            if not @model.search_only
                 $('li', @browseResults).removeClass 'added'
                 $('button', @browseResults).attr 'disabled', false
             $('li', @searchResults).removeClass 'added'
