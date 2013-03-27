@@ -1,0 +1,29 @@
+[{
+    "name": "Sandwiches",
+      "parent": null,
+        "uri": "/app/api/lunches/1/",
+          "terminal": false,
+            "attrs": null,
+              "id": 1
+}, {
+    "name": "Wraps",
+      "parent": null,
+        "uri": "/app/api/lunches/2/",
+          "terminal": false,
+            "attrs": null,
+              "id": 2
+}, {
+    "name": "Soups",
+      "parent": null,
+        "uri": "/app/api/lunches/3/",
+          "terminal": false,
+            "attrs": null,
+              "id": 3
+}, {
+    "name": "Salads",
+      "parent": null,
+        "uri": "/app/api/lunches/4/",
+          "terminal": false,
+            "attrs": null,
+              "id": 4
+}]
