@@ -26,4 +26,3 @@ only = Only()
 registry.register(RequireAll, RequireAll.uid)
 registry.register(NotAll, NotAll.uid)
 registry.register(Only, Only.uid)
-

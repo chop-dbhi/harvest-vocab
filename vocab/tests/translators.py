@@ -7,7 +7,7 @@ class TranslatorTestCase(TestCase):
     fixtures = ['initial_data.json']
 
     def setUp(self):
-        management.call_command('avocado','sync')
+        management.call_command('avocado','init')
         self.t = VocabularyTranslate()
         print self.t
 

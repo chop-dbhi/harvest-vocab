@@ -86,7 +86,7 @@ class TranslateTestCase(TestCase):
     registry.register(t, "test")
 
     def setUp(self):
-        management.call_command('avocado','sync','tests', quiet=True) 
+        management.call_command('avocado','init','tests', quiet=True) 
         TicketIndex.objects.index()
         # Create the text index DataField
         self.df = DataField(name ="Ticket Index Item",app_name='tests',model_name='ticketindex',field_name='item')
@@ -101,7 +101,7 @@ class TranslateTestCase(TestCase):
                 }
 
         dc = DataContext(json = conditions)
-        self.assertEqual([3],[x.pk for x in dc.node(tree=TicketHolder).apply()])
+        self.assertEqual([3],[x.pk for x in dc.parse(tree=TicketHolder).apply()])
         
     def test_excludes_any(self):
         conditions ={'id': self.df.pk,
@@ -110,7 +110,7 @@ class TranslateTestCase(TestCase):
                 }
 
         dc = DataContext(json = conditions)
-        self.assertEqual([2],[x.pk for x in dc.node(tree=TicketHolder).apply()])
+        self.assertEqual([2],[x.pk for x in dc.parse(tree=TicketHolder).apply()])
 
     def test_excludes_all(self):
         conditions ={'id': self.df.pk,
@@ -119,7 +119,7 @@ class TranslateTestCase(TestCase):
                 }
 
         dc = DataContext(json = conditions)
-        self.assertEqual([1,2],[x.pk for x in dc.node(tree=TicketHolder).apply()])
+        self.assertEqual([1,2],[x.pk for x in dc.parse(tree=TicketHolder).apply()])
     
     def test_requires_all(self):
         conditions ={'id': self.df.pk,
@@ -128,7 +128,7 @@ class TranslateTestCase(TestCase):
                 }
 
         dc = DataContext(json = conditions)
-        self.assertEqual([1,3],[x.pk for x in dc.node(tree=TicketHolder).apply()])
+        self.assertEqual([1,3],[x.pk for x in dc.parse(tree=TicketHolder).apply()])
 
     def test_requires_any(self):
         conditions ={'id': self.df.pk,
@@ -137,5 +137,5 @@ class TranslateTestCase(TestCase):
                 }
 
         dc = DataContext(json = conditions)
-        self.assertEqual([1,2,3],[x.pk for x in dc.node(tree=TicketHolder).apply()])
+        self.assertEqual([1,2,3],[x.pk for x in dc.parse(tree=TicketHolder).apply()])
 
