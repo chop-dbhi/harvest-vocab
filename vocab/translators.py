@@ -1,6 +1,6 @@
 from django.db import connection
 from django.core.exceptions import ImproperlyConfigured
-from avocado.query.translators import Translator, registry
+from avocado.query.translators import Translator
 from modeltree.tree import trees
 
 qn = connection.ops.quote_name
@@ -15,10 +15,9 @@ class VocabularyTranslator(Translator):
             raise ImproperlyConfigured('Translator requires `through_model` attribute be defined')
         super(VocabularyTranslator, self).__init__(*args, **kwargs)
 
-    def translate(self, field, roperator, rvalue, using, **context):
-        operator, value = self.validate(field, roperator, rvalue, using, **context)
-        condition = self._condition(field, operator, value, using)
-        language = self.language(field, roperator, rvalue, using, **context)
+    def translate(self, field, roperator, rvalue, tree, **context):
+        operator, value = self.validate(field, roperator, rvalue, tree, **context)
+        language = self.language(field, operator, value, tree=tree, **context)
     
         through = self.through_model
         if operator.uid == 'in':
@@ -34,7 +33,7 @@ class VocabularyTranslator(Translator):
         else:
             raise ImproperlyConfigured()
 
-        tree = trees[using]
+        tree = trees[tree]
         joins = tree.get_joins(through.objects.object_field.rel.to)
         # Skip the first join connection since it
         tables = []

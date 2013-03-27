@@ -1,7 +1,9 @@
-*.pyc
+*.sw?
+*.py?
 .DS_Store
 .sass-cache
 .watch-pid
+.coverage
 dist
 MANIFEST
 

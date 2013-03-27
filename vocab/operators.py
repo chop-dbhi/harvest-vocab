@@ -1,10 +1,10 @@
-from avocado.query.operators import InList, registry
+from avocado.query.operators import ContainerTypeOperator, registry
 
-class RequireAll(InList):
+class RequireAll(ContainerTypeOperator):
+    lookup = 'all'
     join_operator = 'and'
     short_name = 'require all'
     verbose_name = 'requires all of'
-    operator = 'all'
 
 
 class NotAll(RequireAll):
@@ -16,12 +16,8 @@ class NotAll(RequireAll):
 class Only(RequireAll):
     short_name = 'only be'
     verbose_name = 'can only be'
-    operator = 'only'
+    lookup = 'only'
 
-
-requireall = RequireAll()
-notall = NotAll()
-only = Only()
 
 registry.register(RequireAll, RequireAll.uid)
 registry.register(NotAll, NotAll.uid)

@@ -17,8 +17,9 @@ INSTALLED_APPS = (
     'vocab.tests',
     'avocado'
 )
-MODELTREES ={
-        'default': {
-                'model': "tests.ticket",
-            }
-        }
+
+MODELTREES = {
+    'default': {
+        'model': "tests.ticket",
+    }
+}
