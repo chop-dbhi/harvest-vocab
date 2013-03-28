@@ -1,7 +1,7 @@
 from django.db.models import Q
-from restlib import resources, http
+from serrano.resources.datafield.values import DataFieldValues
 
-class ItemResource(resources.Resource):
+class ItemResource(DataFieldValues):
     def GET(self, request, pk):
         item = self.get(request, pk=pk)
 
@@ -10,7 +10,7 @@ class ItemResource(resources.Resource):
         return item
 
 
-class ItemResourceCollection(resources.Resource):
+class ItemResourceCollection(DataFieldValues):
     search_enabled = True
     max_results = 100
     order_by = None
