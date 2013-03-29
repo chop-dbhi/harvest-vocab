@@ -1,11 +1,11 @@
 define [
     'cilantro'
     'cilantro/ui',
-    'tpl!templates/vocab-browser/breadcrumbs.html'
-    'tpl!templates/vocab-browser/browse.html'
-    'tpl!templates/vocab-browser/search-results.html'
-    'tpl!templates/vocab-browser/staged.html'
-    'tpl!templates/vocab-browser/vocab-browser.html'
+    'tpl!templates/vocab/breadcrumbs.html'
+    'tpl!templates/vocab/browse.html'
+    'tpl!templates/vocab/search-results.html'
+    'tpl!templates/vocab/staged.html'
+    'tpl!templates/vocab/vocab-browser.html'
 ], (c, ui,
     breadcrumbsTemplate, 
     browseTemplate, 
