@@ -6,7 +6,6 @@ define [
     'tpl!templates/vocab-browser/search-results.html'
     'tpl!templates/vocab-browser/staged.html'
     'tpl!templates/vocab-browser/vocab-browser.html'
-    'order!vendor/jquery.ui'
 ], (c, ui,
     breadcrumbsTemplate, 
     browseTemplate, 
