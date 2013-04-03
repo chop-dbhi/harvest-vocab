@@ -1,8 +1,0 @@
-<% for (var b, i = 0; i < data.breadcrumbs.length; i++) { %>
-    <% b = data.breadcrumbs[i]; %>
-    <% if (i === (data.breadcrumbs.length-1)) {%>
-        <span title="<%= b.name %>"><%= b.name %></span>
-    <% } else { %>
-        <a href="<%= b.uri %>" title="<%= b.name %>"><%= b.name %></a> <span class="breadcrumb-arrow">&rarr;</span>
-    <% } %>
-<% } %>x
