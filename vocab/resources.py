@@ -2,9 +2,9 @@ from django.db.models import Q
 from avocado.models import DataField
 from django.conf import settings
 from restlib2.http import codes
-from restlib2 import resource
+from restlib2 import Resource
 
-class ItemResource(resource):
+class ItemResource(Resource):
     fields = (':pk', 'description->name', 'abbreviation', 'code', 'terminal',
         'get_absolute_url->uri', 'children', 'ancestors')
 
@@ -21,7 +21,7 @@ class ItemResource(resource):
             return codes.NOT_FOUND
         return item
 
-class ItemResourceCollection(resource):
+class ItemResourceCollection(Resource):
     search_enabled = True
     max_results = 100
     order_by = None
@@ -52,6 +52,6 @@ class ItemResourceCollection(resource):
         # get all root items by default
         return model.objects.filter(parent=None).order_by(*order_by)
 
-class Resources(resource):
+class Resources(Resource):
     pass
 
