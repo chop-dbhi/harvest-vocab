@@ -2,7 +2,8 @@ from django.db.models import Q
 from avocado.models import DataField
 from django.conf import settings
 from restlib2.http import codes
-from restlib2 import Resource
+from restlib2.resources import Resource
+from preserialize.serialize import serialize
 
 class ItemResource(Resource):
     fields = (':pk', 'description->name', 'abbreviation', 'code', 'terminal',
@@ -15,11 +16,11 @@ class ItemResource(Resource):
         field = DataField.objects.get(pk=field_pk)
         model = field.model
 
-        item = model.objects.get(request, pk=pk)
+        item = model.objects.get(pk=pk)
 
         if item is None:
             return codes.NOT_FOUND
-        return item
+        return serialize(item)
 
 class ItemResourceCollection(Resource):
     search_enabled = True
