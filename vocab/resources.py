@@ -1,14 +1,14 @@
 from django.db.models import Q
 from serrano.resources.datafield.values import DataFieldValues
+from restlib2.http import codes
 
 class ItemResource(DataFieldValues):
     def GET(self, request, pk):
         item = self.get(request, pk=pk)
 
         if item is None:
-            return http.NOT_FOUND
+            return codes.NOT_FOUND
         return item
-
 
 class ItemResourceCollection(DataFieldValues):
     search_enabled = True
