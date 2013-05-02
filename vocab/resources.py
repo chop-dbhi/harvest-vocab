@@ -3,7 +3,7 @@ from serrano.resources.datafield.values import DataFieldValues
 from restlib2.http import codes
 
 class ItemResource(DataFieldValues):
-    def GET(self, request, pk):
+    def get(self, request, pk):
         item = self.get(request, pk=pk)
 
         if item is None:
@@ -15,7 +15,7 @@ class ItemResourceCollection(DataFieldValues):
     max_results = 100
     order_by = None
 
-    def GET(self, request):
+    def get(self, request):
         queryset = self.queryset(request)
 
         order_by = self.order_by
