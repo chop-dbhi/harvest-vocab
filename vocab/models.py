@@ -1,6 +1,7 @@
 from django.db import models, router
 from django.db.models import Q
 from vocab.managers import ItemManager, ItemIndexManager
+from django.core.urlresolvers import reverse
 
 class AbstractItem(models.Model):
     """The foreign key or many-to-many field to parent items must be defined.
@@ -17,7 +18,14 @@ class AbstractItem(models.Model):
 
     terminal = models.NullBooleanField()
 
+    #def _uri(self):
+    #    return reverse(self.build_absolute_uri(reverse("vocab:value", kwargs={"pk": self.pk })))
+
+    #uri = property(_uri)
+
     objects = ItemManager()
+
+
 
     class Meta(object):
         abstract = True

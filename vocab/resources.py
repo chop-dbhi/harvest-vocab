@@ -4,6 +4,7 @@ from django.conf import settings
 from restlib2.http import codes
 from restlib2.resources import Resource
 from preserialize.serialize import serialize
+from django.core.urlresolvers import reverse
 
 class ItemResource(Resource):
     fields = (':pk', 'description->name', 'abbreviation', 'code', 'terminal',
@@ -28,6 +29,7 @@ class ItemResourceCollection(Resource):
     order_by = None
 
     def get(self, request, field_pk):
+        uri = request.build_absolute_uri
         if not field_pk in [str(x) for x in settings.VOCAB_FIELDS]:
             return codes.NOT_FOUND
 
@@ -37,7 +39,8 @@ class ItemResourceCollection(Resource):
         order_by = (model.description_field,)
 
         # search if enabled
-        if field.search_enabled and request.GET.has_key('q'):
+        # TODO removed search_enabled on field check here
+        if request.GET.has_key('q'):
             kwargs = {}
             q = request.GET['q']
             query = Q()
@@ -45,14 +48,39 @@ class ItemResourceCollection(Resource):
             for field in getattr(model, 'search_fields', ()):
                 query = query | Q(**{'%s__icontains' % field: q})
 
-            queryset = queryset.order_by('-parent', *order_by)
+            results = serialize(model.objects.filter(query).order_by('-parent', *order_by)[:self.max_results])
+            for node in results:
+                node['uri'] = uri(reverse("vocab:value", kwargs={"field_pk" : field_pk, "pk": node['id']}))
 
-            return model.objects.filter(query)[:self.max_results] \
-                .order_by('-parent', *order_by)
+            return results
 
+        # if no nodes have children, we return not found so the client
+        # can react (go into search only mode)
+        if model.objects.filter(children__isnull = False).count() == 0:
+            return codes.NOT_FOUND
         # get all root items by default
-        return model.objects.filter(parent=None).order_by(*order_by)
+        return serialize(model.objects.filter(parent=None).order_by(*order_by))
 
 class Resources(Resource):
-    pass
-
+    def get(self, request, field_pk):
+        uri = request.build_absolute_uri
+        return {
+            "_links": {
+               "items": {
+                    "href": uri(reverse("vocab:root", 
+                        kwargs={'field_pk':field_pk})) + "values/",
+                    "rel": "items"
+               },
+               "directory": {
+                   "href": uri(reverse("vocab:root", 
+                       kwargs={'field_pk':field_pk})) + "directory/",
+                   "rel": "directory"
+               },
+               "search": {
+                   "href": uri(reverse("vocab:root", 
+                       kwargs={'field_pk':field_pk})) + "search/",
+                   "rel": "search"
+               } 
+            }, 
+            "title": "Serrano Vocab Browser Hypermedia API", 
+        }
