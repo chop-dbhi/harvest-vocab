@@ -1,10 +1,88 @@
-Harvest-Vocab
-=============
+# Harvest-Vocab
 
-Quick Setup
------------
-**1. Setup the models**
+Harvest-Vocab provides a set of abstract Django models for making it trivial to query hierarchical data. Most database systems do not have operators supporting [logical conjunction](http://en.wikipedia.org/wiki/Logical_conjunction) _across multiple rows_. The `IN` operator is [disjunctive](http://en.wikipedia.org/wiki/Logical_disjunction) since only one of _operands_ must be true to satisfy the truth. Harvest-Vocab provides support for constructing _conjunctive_ queries (and the negation of that) as well as _exclusive conjunctive_ queries. The query generation are exposed using Django manager methods.
+
+In addition, hooks are for integrating with [Harvest](http://harvest.research.chop.edu) applications including an Avocado Translator which support defines Avocado operators that map to the manager methods for constructing these kinds of queries. This can be used with the [Harvest-Vocab Client](https://github.com/cbmi/harvest-vocab-client) which integrates with the [Cilantro](http://cilantro.harvest.io), the official client of Harvest.
+
+## Introduction
+
+Harvest-Vocab provides abstract models for defining vocabulary-like models and building a corresponding index for hierarchical data.
+
+For example, this is how you could define models for storing [ICD9 codes](http://en.wikipedia.org/wiki/List_of_ICD-9_codes):
+
 ```python
+from vocab.models import AbstractItem
+
+class Diagnosis(AbstractItem):
+    code = models.CharField(max_length=10)
+    description = models.CharField(max_length=50)
+    parent = models.ForeignKey('self', related_name='children')
+```
+
+ICD9 codes are hierachical therefore when I ask the questions, _"Give me all the patients who have a diagnosis of ICD9 367 (Disorders of refraction and accommodation)"_, then this should not only query 367, but all descendent diagnoses as well (which includes another 2 levels).
+
+This kind of query becomes difficult to write (using the Django ORM or raw SQL) since only the direct parent of the a particular diagnosis is accessible for a given diagnosis, thus the query would look like this.
+
+```python
+from django.db.models import Q
+
+condition = Q(code='367') | Q(parent__code='367')
+Diagnosis.objects.filter(condition)
+```
+
+The obvious problem here is that any diagnoses 2+ levels down from '367' are not included.
+
+### Flat Index
+
+To alleviate this issue, we build a flat index for all levels of the hierarchy. Define it like this:
+
+```python
+from vocab.models import AbstractItemIndex
+
+class DiagnosisIndex(AbstractItemIndex):
+    item = models.ForeignKey(Diagnosis, related_name='item_indexes')
+    parent = models.ForeignKey(Diagnosis, related_name='parent_indexes')
+
+
+DiagnosisIndex.objects.index()
+```
+
+The last line builds a flat index of the hierarchy which alleviates the depth issue. So now, the same question stated above can be answered this way (using the same condition from above):
+
+```python
+subquery = DiagnosisIndex.objects.filter(condition)
+diagnoses = Diagnosis.objects.filter(id__in=subquery)
+```
+
+This utilizes the index and returns all diagnoses that match the condition explictly or are descedents of the ICD9 code of interest.
+
+## Operators
+
+The only native multi-row operator SQL supports is `IN`. A row will be returned if it matches _any_ of the values in the `IN` tuple. However there is no native operator for requiring _all_, _not all_ and _only_.
+
+Harvest-Vocab defines four operators to support these kinds of queries and exposes them via the `ItemThroughManager` class.
+
+- `requires_any(values)` - Corresponds to the `IN` clause (defined for completeness)
+- `excludes_any(values)` - Corresponds to the `NOT IN` clause
+- `requires_all(values)` - Requires all values to match
+- `excludes_all(values)` - Requires all vlaues to _not_ match
+- `only(values)` - Matches if the object _only_ contains the specified values
+
+## Get Started
+
+### Install
+
+```bash
+pip install harvest-vocab
+```
+
+### Setup
+
+#### Define the Models
+
+```python
+from vocab.models import AbstractItem
+
 # Subclass AbstractItem with your model of interest. Add a ManyToManyField
 # to the target object this hierarchy is related to.
 class Diagnosis(AbstractItem):
@@ -17,7 +95,7 @@ class PatientDiagnosis(models.Model):
     patient = models.ForeignKey(Patient)
     ...
 
-    # pass the field names of the term and related object
+    # pass the field names of the term (diagnosis) and related object (patient)
     objects = ItemThroughManager('diagnosis', 'patient')
 
 # Create the index model. Note the foreign keys must be named exactly
@@ -27,89 +105,41 @@ class DiagnosisIndex(AbstractItemIndex):
     parent = models.ForeignKey(Diagnosis, related_name='parent_indexes')
 ```
 
-**2. Build Index**
+#### Build the Index
+
+This builds a simple item/ancestor index which enables querying the underlying data as a flat structure. **Note: the index must be rebuild every time the data changes in target model, e.g. `Diagnosis` in this case.**
+
 ```python
 >>> DiagnosisIndex.objects.index()
 ```
 
-**3. Use Pivot Queries**
-```python
->>> diagnoses = Diagnosis.objects.filter(pk__in=[1, 2])
->>> patient_ids = PatientDiagnosis.objects.requires_all(diagnoses)
->>> patients = Patient.objects.filter(pk__in=patient_ids)
-```
+Now that the index has been built the `PatientDiagnosis` manager methods can now be used.
 
-Introduction
-------------
-Harvest-Vocab provides abstract models for defining vocabulary-like models
-and building a corresponding index for hierarchical _self-related_ data.
+### Harvest Integration
 
-For example, this is how you could define models for storing ICD9 codes:
+Harvest-Vocab comes bundled with a custom Avocado translator which exposes custom operators corresponding to the above manager methods. The translator must be subclassed and the `through_model` class attribute must be set:
 
 ```python
-from vocab.models import AbstractItem, AbstractItemIndex
-
-class Diagnosis(AbstractItem):
-    description = models.CharField(max_length=50)
-    code = models.CharField(max_length=10)
-    parent = models.ForeignKey('self', related_name='children')
-```
-
-ICD9 codes are hierachical therefore when I ask the questions, _"Give me all
-the patients who have a diagnosis in ICD9 367 (Disorders of refraction and
-accommodation)"_, then this should not only query 367, but all descendent
-diagnoses as well (which includes another 2 levels).
-
-This kind of query becomes difficult to write since you only have access to
-the direct parent of the a particular diagnosis, thus the query would look like
-this.
-
-```python
-from django.db.models import Q
-Diagnosis.objects.filter(Q(code='367') | Q(parent__code='367'))
-```
-
-The obvious problem here is that any diagnoses 2+ levels down from '367' are
-not included.
-
-Create A Flat Index
--------------------
-To alleviate this issue, an ``AbstractItemIndex`` subclass can be defined
-which will build a flat index for an ``AbstractItem`` subclass. Simply define
-it like this:
-
-```python
-class DiagnosisIndex(AbstractItemIndex):
-    item = models.ForeignKey(Diagnosis, related_name='item_indexes')
-    parent = models.ForeignKey(Diagnosis, related_name='parent_indexes')
-
-# builds the index for Diagnosis
-DiagnosisIndex.objects.index()
-```
-
-The last line generates a flat index of the hierarchy which alleviates the
-_unknown_ depth issue. So now, the same question stated above can be answered
-this way:
-
-```python
-# either the item has this code or one of it's parents has this code
-condition = Q(item__code='367') | Q(parent__code='367')
-item_ids = DiagnosisIndex.objects.filter(condition).values_list('item__id', flat=True)
-diagnoses = Diagnosis.objects.filter(id__in=item_ids)
-```
-
-Harvest Integration
--------------------
-Harvest-Vocab comes bundled with a custom Avocado translator. Subclass the
-translator `vocab.translate.VocabularyTranslator` and set the `through_model`
-class attribute:
-
-```python
-from avocado.fields import translate
-from vocab.translate import VocabularyTranslator
+from avocado import translators
+from vocab.translators import VocabularyTranslator
 from myapp.models import PatientDiagnosis
 
-@translate.register
 class DiagnosisTranslator(VocabularyTranslator):
     through_model = PatientDiagnosis
+
+translators.register(DiagnosisTranslator)
 ```
+
+To support the [harvest-vocab-client](https://github.com/cbmi/harvest-vocab-client/), endpoints must be defined for the client components to query. Include the `vocab.urls` in the `ROOT_URLCONF` patterns:
+
+```python
+from django.conf.urls import url, reverse, patterns
+
+urlpatterns = patterns('',
+    # Other url patterns...
+
+    url(r'^vocab/', include('vocab.urls')),
+)
+```
+
+In addition, define the `VOCAB_FIELDS` setting which is a list/tuple of Avocado field IDs that are supported.
