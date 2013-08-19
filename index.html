@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <link href='https://fonts.googleapis.com/css?family=Architects+Daughter' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/pygment_trac.css" media="screen" />
+    <link rel="stylesheet" type="text/css" href="stylesheets/print.css" media="print" />
+
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <title>Harvest-vocab by cbmi</title>
+  </head>
+
+  <body>
+    <header>
+      <div class="inner">
+        <h1>Harvest-vocab</h1>
+        <h2>Abstract models and manager for querying hierarchical data for Harvest</h2>
+        <a href="https://github.com/cbmi/harvest-vocab" class="button"><small>View project on</small>GitHub</a>
+      </div>
+    </header>
+
+    <div id="content-wrapper">
+      <div class="inner clearfix">
+        <section id="main-content">
+          <p>Harvest-Vocab provides a set of abstract Django models for making it trivial to query hierarchical data. Most database systems do not have operators supporting <a href="http://en.wikipedia.org/wiki/Logical_conjunction">logical conjunction</a> <em>across multiple rows</em>. The <code>IN</code> operator is <a href="http://en.wikipedia.org/wiki/Logical_disjunction">disjunctive</a> since only one of <em>operands</em> must be true to satisfy the truth. Harvest-Vocab provides support for constructing <em>conjunctive</em> queries (and the negation of that) as well as <em>exclusive conjunctive</em> queries. The query generation are exposed using Django manager methods.</p>
+
+<p>In addition, hooks are for integrating with <a href="http://harvest.research.chop.edu">Harvest</a> applications including an Avocado Translator which support defines Avocado operators that map to the manager methods for constructing these kinds of queries. This can be used with the <a href="https://github.com/cbmi/harvest-vocab-client">Harvest-Vocab Client</a> which integrates with the <a href="http://cilantro.harvest.io">Cilantro</a>, the official client of Harvest.</p>
+
+<h2>
+<a name="introduction" class="anchor" href="#introduction"><span class="octicon octicon-link"></span></a>Introduction</h2>
+
+<p>Harvest-Vocab provides abstract models for defining vocabulary-like models and building a corresponding index for hierarchical data.</p>
+
+<p>For example, this is how you could define models for storing <a href="http://en.wikipedia.org/wiki/List_of_ICD-9_codes">ICD9 codes</a>:</p>
+
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">vocab.models</span> <span class="kn">import</span> <span class="n">AbstractItem</span>
+
+<span class="k">class</span> <span class="nc">Diagnosis</span><span class="p">(</span><span class="n">AbstractItem</span><span class="p">):</span>
+    <span class="n">code</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="s">'self'</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s">'children'</span><span class="p">)</span>
+</pre></div>
+
+<p>ICD9 codes are hierachical therefore when I ask the questions, <em>"Give me all the patients who have a diagnosis of ICD9 367 (Disorders of refraction and accommodation)"</em>, then this should not only query 367, but all descendent diagnoses as well (which includes another 2 levels).</p>
+
+<p>This kind of query becomes difficult to write (using the Django ORM or raw SQL) since only the direct parent of the a particular diagnosis is accessible for a given diagnosis, thus the query would look like this.</p>
+
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.db.models</span> <span class="kn">import</span> <span class="n">Q</span>
+
+<span class="n">condition</span> <span class="o">=</span> <span class="n">Q</span><span class="p">(</span><span class="n">code</span><span class="o">=</span><span class="s">'367'</span><span class="p">)</span> <span class="o">|</span> <span class="n">Q</span><span class="p">(</span><span class="n">parent__code</span><span class="o">=</span><span class="s">'367'</span><span class="p">)</span>
+<span class="n">Diagnosis</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">condition</span><span class="p">)</span>
+</pre></div>
+
+<p>The obvious problem here is that any diagnoses 2+ levels down from '367' are not included.</p>
+
+<h3>
+<a name="flat-index" class="anchor" href="#flat-index"><span class="octicon octicon-link"></span></a>Flat Index</h3>
+
+<p>To alleviate this issue, we build a flat index for all levels of the hierarchy. Define it like this:</p>
+
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">vocab.models</span> <span class="kn">import</span> <span class="n">AbstractItemIndex</span>
+
+<span class="k">class</span> <span class="nc">DiagnosisIndex</span><span class="p">(</span><span class="n">AbstractItemIndex</span><span class="p">):</span>
+    <span class="n">item</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Diagnosis</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s">'item_indexes'</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Diagnosis</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s">'parent_indexes'</span><span class="p">)</span>
+
+
+<span class="n">DiagnosisIndex</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">index</span><span class="p">()</span>
+</pre></div>
+
+<p>The last line builds a flat index of the hierarchy which alleviates the depth issue. So now, the same question stated above can be answered this way (using the same condition from above):</p>
+
+<div class="highlight"><pre><span class="n">subquery</span> <span class="o">=</span> <span class="n">DiagnosisIndex</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">condition</span><span class="p">)</span>
+<span class="n">diagnoses</span> <span class="o">=</span> <span class="n">Diagnosis</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">id__in</span><span class="o">=</span><span class="n">subquery</span><span class="p">)</span>
+</pre></div>
+
+<p>This utilizes the index and returns all diagnoses that match the condition explictly or are descedents of the ICD9 code of interest.</p>
+
+<h2>
+<a name="operators" class="anchor" href="#operators"><span class="octicon octicon-link"></span></a>Operators</h2>
+
+<p>The only native multi-row operator SQL supports is <code>IN</code>. A row will be returned if it matches <em>any</em> of the values in the <code>IN</code> tuple. However there is no native operator for requiring <em>all</em>, <em>not all</em> and <em>only</em>.</p>
+
+<p>Harvest-Vocab defines four operators to support these kinds of queries and exposes them via the <code>ItemThroughManager</code> class.</p>
+
+<ul>
+<li>
+<code>requires_any(values)</code> - Corresponds to the <code>IN</code> clause (defined for completeness)</li>
+<li>
+<code>excludes_any(values)</code> - Corresponds to the <code>NOT IN</code> clause</li>
+<li>
+<code>requires_all(values)</code> - Requires all values to match</li>
+<li>
+<code>excludes_all(values)</code> - Requires all vlaues to <em>not</em> match</li>
+<li>
+<code>only(values)</code> - Matches if the object <em>only</em> contains the specified values</li>
+</ul><h2>
+<a name="get-started" class="anchor" href="#get-started"><span class="octicon octicon-link"></span></a>Get Started</h2>
+
+<h3>
+<a name="install" class="anchor" href="#install"><span class="octicon octicon-link"></span></a>Install</h3>
+
+<div class="highlight"><pre>pip install harvest-vocab
+</pre></div>
+
+<h3>
+<a name="setup" class="anchor" href="#setup"><span class="octicon octicon-link"></span></a>Setup</h3>
+
+<h4>
+<a name="define-the-models" class="anchor" href="#define-the-models"><span class="octicon octicon-link"></span></a>Define the Models</h4>
+
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">vocab.models</span> <span class="kn">import</span> <span class="n">AbstractItem</span>
+
+<span class="c"># Subclass AbstractItem with your model of interest. Add a ManyToManyField</span>
+<span class="c"># to the target object this hierarchy is related to.</span>
+<span class="k">class</span> <span class="nc">Diagnosis</span><span class="p">(</span><span class="n">AbstractItem</span><span class="p">):</span>
+    <span class="n">patients</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ManyToManyField</span><span class="p">(</span><span class="n">Patient</span><span class="p">,</span> <span class="n">through</span><span class="o">=</span><span class="s">'PatientDiagnosis'</span><span class="p">)</span>
+    <span class="o">...</span>
+
+<span class="c"># Create a many-to-many through model with the correct foreign keys</span>
+<span class="k">class</span> <span class="nc">PatientDiagnosis</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">diagnosis</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Diagnosis</span><span class="p">)</span>
+    <span class="n">patient</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Patient</span><span class="p">)</span>
+    <span class="o">...</span>
+
+    <span class="c"># pass the field names of the term (diagnosis) and related object (patient)</span>
+    <span class="n">objects</span> <span class="o">=</span> <span class="n">ItemThroughManager</span><span class="p">(</span><span class="s">'diagnosis'</span><span class="p">,</span> <span class="s">'patient'</span><span class="p">)</span>
+
+<span class="c"># Create the index model. Note the foreign keys must be named exactly</span>
+<span class="c"># as show below including the related_name fields</span>
+<span class="k">class</span> <span class="nc">DiagnosisIndex</span><span class="p">(</span><span class="n">AbstractItemIndex</span><span class="p">):</span>
+    <span class="n">item</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Diagnosis</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s">'item_indexes'</span><span class="p">)</span>
+    <span class="n">parent</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Diagnosis</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="s">'parent_indexes'</span><span class="p">)</span>
+</pre></div>
+
+<h4>
+<a name="build-the-index" class="anchor" href="#build-the-index"><span class="octicon octicon-link"></span></a>Build the Index</h4>
+
+<p>This builds a simple item/ancestor index which enables querying the underlying data as a flat structure. <strong>Note: the index must be rebuild every time the data changes in target model, e.g. <code>Diagnosis</code> in this case.</strong></p>
+
+<div class="highlight"><pre><span class="o">&gt;&gt;&gt;</span> <span class="n">DiagnosisIndex</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">index</span><span class="p">()</span>
+</pre></div>
+
+<p>Now that the index has been built the <code>PatientDiagnosis</code> manager methods can now be used.</p>
+
+<h3>
+<a name="harvest-integration" class="anchor" href="#harvest-integration"><span class="octicon octicon-link"></span></a>Harvest Integration</h3>
+
+<p>Harvest-Vocab comes bundled with a custom Avocado translator which exposes custom operators corresponding to the above manager methods. The translator must be subclassed and the <code>through_model</code> class attribute must be set:</p>
+
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">avocado</span> <span class="kn">import</span> <span class="n">translators</span>
+<span class="kn">from</span> <span class="nn">vocab.translators</span> <span class="kn">import</span> <span class="n">VocabularyTranslator</span>
+<span class="kn">from</span> <span class="nn">myapp.models</span> <span class="kn">import</span> <span class="n">PatientDiagnosis</span>
+
+<span class="k">class</span> <span class="nc">DiagnosisTranslator</span><span class="p">(</span><span class="n">VocabularyTranslator</span><span class="p">):</span>
+    <span class="n">through_model</span> <span class="o">=</span> <span class="n">PatientDiagnosis</span>
+
+<span class="n">translators</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">DiagnosisTranslator</span><span class="p">)</span>
+</pre></div>
+
+<p>To support the <a href="https://github.com/cbmi/harvest-vocab-client/">harvest-vocab-client</a>, endpoints must be defined for the client components to query. Include the <code>vocab.urls</code> in the <code>ROOT_URLCONF</code> patterns:</p>
+
+<div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.conf.urls</span> <span class="kn">import</span> <span class="n">url</span><span class="p">,</span> <span class="n">reverse</span><span class="p">,</span> <span class="n">patterns</span>
+
+<span class="n">urlpatterns</span> <span class="o">=</span> <span class="n">patterns</span><span class="p">(</span><span class="s">''</span><span class="p">,</span>
+    <span class="c"># Other url patterns...</span>
+
+    <span class="n">url</span><span class="p">(</span><span class="s">r'^vocab/'</span><span class="p">,</span> <span class="n">include</span><span class="p">(</span><span class="s">'vocab.urls'</span><span class="p">)),</span>
+<span class="p">)</span>
+</pre></div>
+
+<p>In addition, define the <code>VOCAB_FIELDS</code> setting which is a list/tuple of Avocado field IDs that are supported.</p>
+        </section>
+
+        <aside id="sidebar">
+          <a href="https://github.com/cbmi/harvest-vocab/zipball/master" class="button">
+            <small>Download</small>
+            .zip file
+          </a>
+          <a href="https://github.com/cbmi/harvest-vocab/tarball/master" class="button">
+            <small>Download</small>
+            .tar.gz file
+          </a>
+
+          <p class="repo-owner"><a href="https://github.com/cbmi/harvest-vocab"></a> is maintained by <a href="https://github.com/cbmi">cbmi</a>.</p>
+
+          <p>This page was generated by <a href="pages.github.com">GitHub Pages</a> using the Architect theme by <a href="https://twitter.com/jasonlong">Jason Long</a>.</p>
+        </aside>
+      </div>
+    </div>
+
+  
+  </body>
+</html>
