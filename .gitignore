@@ -1,5 +1,6 @@
 *.sw?
 *.py?
+*.egg-info
 .DS_Store
 .sass-cache
 .watch-pid
