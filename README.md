@@ -143,3 +143,47 @@ urlpatterns = patterns('',
 ```
 
 In addition, define the `VOCAB_FIELDS` setting which is a list/tuple of Avocado field IDs that are supported.
+
+## Implementation
+
+The custom operators are implemented using SQL `CASE` statements. An example output for an _requires all_ query would look something like this. Although this query may look daunting, the important bits are only the summed `CASE` statements combined with the `WHERE` condition for those expressions, e.g. `sc1` and `sc5`. To handle the hierarchical nature of the data (in this case [ICD9 codes](http://en.wikipedia.org/wiki/List_of_ICD-9_codes), the index table is being used which enables matching against the item itself (via `"item_id" = 1`) or a descendent of the item (via `"parent_id" = 1`).
+
+```sql
+SELECT DISTINCT "core_person"."id",
+FROM "core_person",
+     "core_subject"
+WHERE "core_person"."id" = "core_subject"."person_id"
+    AND "core_subject"."id" IN (
+        SELECT "patient_id"
+        FROM (
+            SELECT "patient_id",
+            SUM(
+                CASE
+                    WHEN "core_diagnosisindex"."item_id" = 1 THEN 1
+                    WHEN "core_diagnosisindex"."parent_id" = 1 THEN 1
+                    ELSE 0
+                END
+            ) AS "sc1",
+            SUM(
+                CASE
+                    WHEN "core_diagnosisindex"."item_id" = 5 THEN 1
+                    WHEN "core_diagnosisindex"."parent_id" = 5 THEN 1
+                    ELSE 0
+                END
+            ) AS "sc5",
+            FROM "core_patientdiagnosis"
+                INNER JOIN "core_diagnosisindex" ON ("core_patientdiagnosis"."diagnosis_id" = "core_diagnosisindex"."item_id" )
+           GROUP  BY "patient_id"
+        ) AS T
+        WHERE  "sc1" > 0
+            AND "sc5" > 0
+    )
+```
+
+The difference between operators are simply the whether the condition is negated and how many are required to match.
+
+- **requires all** - An item must match at least once for all items
+- **requires any** - An item must match at least once for any items (equivalent to the `IN` clause)
+- **excludes all** - An item must not match for all items
+- **excludes any** - An item must not match for any items (equivalent to the `NOT IN` clause)
+- **only** - An item must match only once for all items and nothing else
