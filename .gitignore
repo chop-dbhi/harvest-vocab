@@ -2,15 +2,6 @@
 *.py?
 *.egg-info
 .DS_Store
-.sass-cache
-.watch-pid
 .coverage
 dist
 MANIFEST
-
-# Code derived from submodules
-bin/r.js
-
-# Compiled static files
-vocab/static/vocab/stylesheets/css
-vocab/static/vocab/scripts/javascript
