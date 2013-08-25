@@ -14,7 +14,7 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'django.contrib.contenttypes',
     'vocab',
-    'vocab.tests',
+    'tests',
     'avocado'
 )
 
@@ -23,3 +23,5 @@ MODELTREES = {
         'model': "tests.ticket",
     }
 }
+
+SECRET_KEY = 'abc123'
