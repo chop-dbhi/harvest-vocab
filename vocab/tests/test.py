@@ -5,6 +5,7 @@ from avocado.query.translators import registry, Translator
 from vocab.translators import VocabularyTranslator
 from .models import Ticket, TicketIndex, TicketHolder, TicketThrough
 
+
 class ItemTestCase(TestCase):
     def setUp(self):
         TicketIndex.objects.db_manager('alt').index()
@@ -61,14 +62,14 @@ class ItemTestCase(TestCase):
         # Holder must not be assigned to both tickets..
         values = [1, 5]
         ids = TicketThrough.objects.db_manager('alt').excludes_all(values, evaluate=True)
-        holders = TicketHolder.objects.exclude(id__in=ids).values_list('pk', flat=True)
+        holders = TicketHolder.objects.filter(id__in=ids).values_list('pk', flat=True)
         self.assertEqual(list(holders), [1, 2])
 
     def test_excludes_any(self):
         # Holder must not be assigned to either tickets..
         values = [1, 2]
         ids = TicketThrough.objects.db_manager('alt').excludes_any(values, evaluate=True)
-        holders = TicketHolder.objects.exclude(id__in=ids).values_list('pk', flat=True)
+        holders = TicketHolder.objects.filter(id__in=ids).values_list('pk', flat=True)
         self.assertEqual(list(holders), [2])
 
     def test_only(self):
@@ -79,63 +80,63 @@ class ItemTestCase(TestCase):
         holders = TicketHolder.objects.filter(id__in=ids).values_list('pk', flat=True)
         self.assertEqual(list(holders), [3])
 
+
 class TranslateTestCase(TestCase):
-    fixtures =['initial_data.json']
-    t = VocabularyTranslator
-    t.through_model = TicketThrough
-    registry.register(t, "test")
+    fixtures = ['initial_data.json']
+
+    # Define translator with defined through model and register it
+    class T(VocabularyTranslator):
+        through_model = TicketThrough
+    registry.register(T, 'test')
 
     def setUp(self):
-        management.call_command('avocado','init','tests', quiet=True) 
+        management.call_command('avocado','init','tests', quiet=True)
+
+        # Build item index
         TicketIndex.objects.index()
+
         # Create the text index DataField
-        self.df = DataField(name ="Ticket Index Item",app_name='tests',model_name='ticketindex',field_name='item')
-        self.df.translator = "test"
-        self.df.save()
-    
+        self.f = DataField(name='Ticket Index Item', app_name='tests',
+            model_name='ticketindex', field_name='item')
+        self.f.translator = "test"
+        self.f.save()
 
     def test_only(self):
-        conditions ={'id': self.df.pk,
-                    'operator': 'only',
-                    'value' : [1,6]
-                }
+        c = DataContext(json={
+            'field': self.f.pk,
+            'operator': 'only',
+            'value': [1, 6]
+        })
+        self.assertEqual([3], [x.pk for x in c.apply(tree=TicketHolder)])
 
-        dc = DataContext(json = conditions)
-        self.assertEqual([3],[x.pk for x in dc.parse(tree=TicketHolder).apply()])
-        
     def test_excludes_any(self):
-        conditions ={'id': self.df.pk,
-                    'operator': '-in',
-                    'value' : [1,2]
-                }
-
-        dc = DataContext(json = conditions)
-        self.assertEqual([2],[x.pk for x in dc.parse(tree=TicketHolder).apply()])
+        c = DataContext(json={
+            'field': self.f.pk,
+            'operator': '-in',
+            'value': [1, 2]
+        })
+        self.assertEqual([2], [x.pk for x in c.apply(tree=TicketHolder)])
 
     def test_excludes_all(self):
-        conditions ={'id': self.df.pk,
-                    'operator': '-all',
-                    'value' : [1,5]
-                }
+        c = DataContext(json={
+            'field': self.f.pk,
+            'operator': '-all',
+            'value': [1, 5]
+        })
+        self.assertEqual([1, 2], sorted([x.pk for x in c.apply(tree=TicketHolder)]))
 
-        dc = DataContext(json = conditions)
-        self.assertEqual([1,2],[x.pk for x in dc.parse(tree=TicketHolder).apply()])
-    
     def test_requires_all(self):
-        conditions ={'id': self.df.pk,
-                    'operator': 'all',
-                    'value' : [1,3]
-                }
-
-        dc = DataContext(json = conditions)
-        self.assertEqual([1,3],[x.pk for x in dc.parse(tree=TicketHolder).apply()])
+        c = DataContext(json={
+            'field': self.f.pk,
+            'operator': 'all',
+            'value': [1, 3]
+        })
+        self.assertEqual([1, 3], sorted([x.pk for x in c.apply(tree=TicketHolder)]))
 
     def test_requires_any(self):
-        conditions ={'id': self.df.pk,
-                    'operator': 'in',
-                    'value' : [3]
-                }
-
-        dc = DataContext(json = conditions)
-        self.assertEqual([1,2,3],[x.pk for x in dc.parse(tree=TicketHolder).apply()])
-
+        c = DataContext(json={
+            'field': self.f.pk,
+            'operator': 'in',
+            'value': [3]
+        })
+        self.assertEqual([1, 2, 3], sorted([x.pk for x in c.apply(tree=TicketHolder)]))

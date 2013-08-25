@@ -4,9 +4,12 @@ from django.db.models.sql import RawQuery
 
 qn = connection.ops.quote_name
 
-COLUMN_PREFIX = 'sc' # summed case
+# Prefix for the summed case statement values
+COLUMN_PREFIX = 'sc'
 
-CASE_STATEMENT_TEMPLATE = '''\
+# Case statement for determining if the lookup matches the item or the
+# parent. Every record is evaluated
+SUMMED_CASE_TEMPLATE = '''\
 SUM(
     CASE
         WHEN {index_table}.{item_column} = {item_pk} THEN 1
@@ -16,13 +19,15 @@ SUM(
 ) AS {column_alias}
 '''
 
-SELECT_STATEMENT_TEMPLATE = '''\
+# Sub-query which selects all object ids matching the conditions derived
+# from the CASE statements.
+PIVOT_QUERY_TEMPLATE = '''\
 SELECT {object_column} FROM (
     SELECT {object_column}, {case_statements}
     FROM {through_table}
         INNER JOIN {index_table} ON ({through_table}.{item_column} = {index_table}.{item_id})
     GROUP BY {object_column}
-) AS T WHERE {where_condition}
+) AS T WHERE {negate} ({where_condition})
 '''
 
 
@@ -57,38 +62,41 @@ class ItemThroughManager(models.Manager):
         "Reference to the item's `AbstractItemIndex` subclass."
         return self.item_field.rel.to.item_indexes.related.model
 
-    def _construct_case_statements(self, values):
-        "Constructs a summed case statement SQL string for each value."
-        query = [CASE_STATEMENT_TEMPLATE.format(**{
-            'item_pk': pk,
-            'index_table': qn(self.index_model._meta.db_table),
-            'item_column': qn('item_id'),
-            'parent_column': qn('parent_id'),
-            'column_alias': qn(COLUMN_PREFIX + str(pk)),
-        }) for pk in values]
-        return ', '.join(query)
-
-    def _construct_where_condition(self, values, where_equals, node_join):
-        """Constructs the conditions portion of the SQL string by setting each
-        values row equal to `where_equals` and join the conditions by
-        `node_join` either AND or OR.
+    def _construct_case_and_where(self, items, where_equals, node_join):
+        """Constructs the SUM-CASE statement and corresponding WHERE clause
+        for each item. WHERE clauses are set to `where_equals` and joined by
+        the `node_join` operator, either AND or OR.
         """
+        cases = []
+        wheres = []
+
         if where_equals is True:
-            statement = ' {column_alias} > 0 '
+            predicate = ' {column_alias} > 0 '
         else:
-            statement = ' {column_alias} = {where_equals} '
+            predicate = ' {column_alias} = {where_equals} '
 
-        query = [statement.format(column_alias=qn(COLUMN_PREFIX + str(pk)),
-            where_equals=where_equals) for pk in values]
+        for pk in items:
+            column_alias = COLUMN_PREFIX + str(pk)
 
-        return node_join.join(query)
+            cases.append(SUMMED_CASE_TEMPLATE.format(**{
+                'item_pk': pk,
+                'index_table': qn(self.index_model._meta.db_table),
+                'item_column': qn('item_id'),
+                'parent_column': qn('parent_id'),
+                'column_alias': qn(column_alias),
+            }))
 
-    def _get_query(self, case_statements, where_conditions, evaluate):
-        """Constructs an SQL query based on the values, case_statments,
+            wheres.append(predicate.format(column_alias=qn(column_alias),
+                where_equals=where_equals))
+
+        return ', '.join(cases), node_join.join(wheres)
+
+    def _get_query(self, case_statements, where_conditions, evaluate, negate=False):
+        """Constructs an SQL query based on the items, case_statments,
         and where conditions provided and runs the query on the associated
         model.
         """
-        query = SELECT_STATEMENT_TEMPLATE.format(**{
+        query = PIVOT_QUERY_TEMPLATE.format(**{
             'item_column': qn(self.item_field.column),
             'object_column': qn(self.object_field.column),
             'case_statements': case_statements,
@@ -96,6 +104,7 @@ class ItemThroughManager(models.Manager):
             'index_table': qn(self.index_model._meta.db_table),
             'where_condition': where_conditions,
             'item_id': qn('item_id'),
+            'negate': negate and 'NOT' or '',
         })
         # Clean up the whitespace
         query = re.sub('\s+', ' ', query)
@@ -103,44 +112,43 @@ class ItemThroughManager(models.Manager):
             return [x[0] for x in RawQuery(query, using=self.db)]
         return '({0})'.format(query)
 
+    def _prepare_items(self, items):
+        if type(items[0]) is not int:
+            items = [term.pk for term in items]
+        return items
+
+    def _any(self, items, evaluate, negate):
+        "Pivot query for disjunction."
+        items = self._prepare_items(items)
+        cases, wheres = self._construct_case_and_where(items, True, 'OR')
+        return self._get_query(cases, wheres, evaluate, negate)
+
+    def _all(self, items, evaluate, negate):
+        "Pivot query for conjunction."
+        items = self._prepare_items(items)
+        cases, wheres = self._construct_case_and_where(items, True, 'AND')
+        return self._get_query(cases, wheres, evaluate, negate)
+
+    def _only(self, items, evaluate, negate):
+        "Pivot query for exclusive conjunction."
+        items = self._prepare_items(items)
+        cases, wheres = self._construct_case_and_where(items, 1, 'AND')
+        return self._get_query(cases, wheres, evaluate)
+
     def requires_any(self, items, evaluate=False):
-        "Returns through objects that are associated with 'any' of the given items."
-        if type(items[0]) is not int:
-            items = [term.pk for term in items]
-        case_statements = self._construct_case_statements(items)
-        where_condition = self._construct_where_condition(items, True, 'OR')
-        return self._get_query(case_statements, where_condition, evaluate)
-
-    def requires_all(self, items, evaluate=False):
-        "Returns through objects that are associated with 'all' of the given items."
-        if type(items[0]) is not int:
-            items = [term.pk for term in items]
-        case_statements = self._construct_case_statements(items)
-        where_condition = self._construct_where_condition(items, True, 'AND')
-        return self._get_query(case_statements, where_condition, evaluate)
-
-    def excludes_all(self, items, evaluate=False):
-        "Returns through objects that are _not_ associated with all of the given items."
-        if type(items[0]) is not int:
-            items = [term.pk for term in items]
-        case_statements = self._construct_case_statements(items)
-        where_condition = self._construct_where_condition(items, True, 'AND')
-        return self._get_query(case_statements, where_condition, evaluate)
+        return self._any(items, evaluate, negate=False)
 
     def excludes_any(self, items, evaluate=False):
-        if type(items[0]) is not int:
-            items = [term.pk for term in items]
-        case_statements = self._construct_case_statements(items)
-        where_condition = self._construct_where_condition(items, True, 'OR')
-        return self._get_query(case_statements, where_condition, evaluate)
+        return self._any(items, evaluate, negate=True)
+
+    def requires_all(self, items, evaluate=False):
+        return self._all(items, evaluate, negate=False)
+
+    def excludes_all(self, items, evaluate=False):
+        return self._all(items, evaluate, negate=True)
 
     def only(self, items, evaluate=False):
-        "Returns through objects that 'only' match the given items."
-        if type(items[0]) is not int:
-            items = [term.pk for term in items]
-        case_statements = self._construct_case_statements(items)
-        where_condition = self._construct_where_condition(items, 1, 'AND')
-        return self._get_query(case_statements, where_condition, evaluate)
+        return self._only(items, evaluate, negate=False)
 
 
 class ItemIndexManager(models.Manager):
