@@ -5,11 +5,11 @@ override_fields = '|'.join([str(f) for f in VOCAB_FIELDS])
 
 urlpatterns = patterns('',
     url(r'', include(patterns('',
-       url(r'^fields/(?P<field_pk>{0})/values/(?P<pk>\d+)/$'.format(override_fields), 'vocab.resources.ItemResource',
-           name="value"),
-       url(r'^fields/(?P<field_pk>{0})/directory/$'.format(override_fields), 'vocab.resources.ItemResourceCollection'),
-       url(r'^fields/(?P<field_pk>{0})/search/$'.format(override_fields), 'vocab.resources.ItemResourceCollection'),
-       url(r'^fields/(?P<field_pk>{0})/$'.format(override_fields), 'vocab.resources.Resources',
-           name='root')
-    ), namespace="vocab"))
+        url(r'^fields/(?P<pk>{0})/values/$'.format(override_fields),
+            'vocab.resources.ItemsResource', name='items'),
+       url(r'^fields/(?P<pk>{0})/values/(?P<item_pk>\d+)/$'.format(override_fields),
+           'vocab.resources.ItemResource', name='item'),
+       url(r'^fields/(?P<pk>{0})/values/(?P<item_pk>\d+)/values/$'.format(override_fields),
+           'vocab.resources.ItemsResource', name='items'),
+    ), namespace='vocab'))
 )
