@@ -1,14 +1,18 @@
-import sys
 from setuptools import setup, find_packages
 
 kwargs = {
     # Packages
-    'packages': find_packages(exclude=['tests', '*.tests', '*.tests.*', 'tests.*']),
+    'packages': find_packages(exclude=[
+        'tests',
+        '*.tests',
+        '*.tests.*',
+        'tests.*'
+    ]),
     'include_package_data': True,
 
     # Dependencies
     'install_requires': [
-        'serrano>=2.0.18,<2.1',
+        'serrano>=2.1.0,<2.2',
     ],
 
     # Test dependencies
@@ -17,9 +21,6 @@ kwargs = {
     ],
 
     'test_suite': 'test_suite',
-
-    # Optional dependencies
-    'extras_require': {},
 
     # Metadata
     'name': 'harvest-vocab',

@@ -1,14 +1,11 @@
 import functools
 from django.db.models import Q
 from django.core.urlresolvers import reverse
-from django.core.exceptions import ObjectDoesNotExist
-from django.http import HttpResponse
 from avocado.models import DataField
 from avocado.events import usage
 from restlib2.resources import Resource
 from serrano.resources.field.values import FieldValues
 from preserialize.serialize import serialize
-from .settings import VOCAB_FIELDS
 
 
 def item_posthook(instance, data, request, pk):
@@ -80,8 +77,8 @@ class ItemBaseResource(Resource):
         return serialize(objects, posthook=posthook, **template)
 
 
-
-# TODO if/when serrano becomes more reusable, update and remove boilerplate code
+# TODO if/when serrano becomes more reusable, update and remove
+# boilerplate code
 class ItemsResource(ItemBaseResource, FieldValues):
     """Resource for vocab items. If no item is specified, items without a
     parent are returned, otherwise the children of the specified item are
@@ -93,7 +90,8 @@ class ItemsResource(ItemBaseResource, FieldValues):
     template = None
 
     def get_base_values(self, request, instance, params, item_pk=None):
-        queryset = super(ItemsResource, self).get_base_values(request, instance, params)
+        queryset = super(ItemsResource, self).get_base_values(request,
+                    instance, params)
         queryset = queryset.filter(parent__pk=item_pk)
         return queryset
 
@@ -122,7 +120,7 @@ class ItemsResource(ItemBaseResource, FieldValues):
             return self.get_random_values(request, instance, params, item_pk)
 
         page = params['page']
-        per_page = params['per_page']
+        limit = params['limit']
 
         # If a query term is supplied, perform the icontains search
         if params['query']:
@@ -138,7 +136,7 @@ class ItemsResource(ItemBaseResource, FieldValues):
         if page is None:
             return values
 
-        paginator = self.get_paginator(values, per_page=per_page)
+        paginator = self.get_paginator(values, limit=limit)
         page = paginator.page(page)
 
         kwargs = {'pk': pk}
@@ -146,10 +144,14 @@ class ItemsResource(ItemBaseResource, FieldValues):
             kwargs['item_pk'] = item_pk
         path = reverse('vocab:items', kwargs=kwargs)
         links = self.get_page_links(request, path, page, extra=params)
+        links['parent'] = {
+            'href': request.build_absolute_uri(reverse('serrano:field',
+                    kwargs={'pk': pk}))
+        }
 
         return {
             'values': page.object_list,
-            'per_page': paginator.per_page,
+            'limit': paginator.per_page,
             'num_pages': paginator.num_pages,
             'page_num': page.number,
             '_links': links,
