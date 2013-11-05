@@ -49,7 +49,7 @@ class VocabularyTranslator(Translator):
         for join in joins[1:]:
             conn = join.get('connection')
 
-            tables.append(right)
+            tables.append(conn[1])
 
             kwargs = {
                 'left': qn(conn[0]),
