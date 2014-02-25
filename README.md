@@ -100,14 +100,14 @@ harvest-vocab defines five methods to support hierarchy-based queries and expose
 Harvest-Vocab comes bundled with a custom Avocado translator which exposes custom operators corresponding to the above manager methods. The translator must be subclassed and the `through_model` class attribute must be set:
 
 ```python
-from avocado import translators
+from avocado.query.translators import registry
 from vocab.translators import VocabularyTranslator
 from myapp.models import PatientDiagnosis
 
 class DiagnosisTranslator(VocabularyTranslator):
     through_model = PatientDiagnosis
 
-translators.register(DiagnosisTranslator)
+registry.register(DiagnosisTranslator)
 ```
 
 To support the [harvest-vocab-client](https://github.com/cbmi/harvest-vocab-client/), endpoints must be defined for the client components to query. Include the `vocab.urls` in the `ROOT_URLCONF` patterns:
