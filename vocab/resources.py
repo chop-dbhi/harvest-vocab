@@ -90,20 +90,21 @@ class ItemsResource(ItemBaseResource, FieldValues):
     template = None
 
     def get_base_values(self, request, instance, params, item_pk=None):
-        queryset = super(ItemsResource, self).get_base_values(request,
-                    instance, params)
-        queryset = queryset.filter(parent__pk=item_pk)
-        return queryset
+        return super(ItemsResource, self).get_base_values(request, instance,
+                                                          params)
 
     def get_all_values(self, request, instance, params, item_pk=None):
         queryset = self.get_base_values(request, instance, params, item_pk)
+        queryset = queryset.filter(parent__pk=item_pk)
         return self.prepare(request, queryset, instance.pk)
 
     def get_search_values(self, request, instance, params, item_pk=None):
         queryset = self.get_base_values(request, instance, params, item_pk)
         condition = Q()
         for field in instance.model.search_fields:
-            condition = condition | Q(**{'{0}__icontains'.format(field): params['query']})
+            condition = condition | Q(**{
+                '{0}__icontains'.format(field): params['query']
+            })
         queryset = queryset.filter(condition)
         return self.prepare(request, queryset, instance.pk)
 
@@ -146,7 +147,7 @@ class ItemsResource(ItemBaseResource, FieldValues):
         links = self.get_page_links(request, path, page, extra=params)
         links['parent'] = {
             'href': request.build_absolute_uri(reverse('serrano:field',
-                    kwargs={'pk': pk}))
+                                                       kwargs={'pk': pk}))
         }
 
         return {
