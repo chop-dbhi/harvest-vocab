@@ -1,8 +1,10 @@
 import functools
 from django.db.models import Q
 from django.core.urlresolvers import reverse
+from django.utils.encoding import smart_unicode
 from avocado.models import DataField
 from avocado.events import usage
+from restlib2.http import codes
 from restlib2.resources import Resource
 from serrano.resources.field.values import FieldValues
 from preserialize.serialize import serialize
@@ -157,6 +159,108 @@ class ItemsResource(ItemBaseResource, FieldValues):
             'page_num': page.number,
             '_links': links,
         }
+
+    def post(self, request, pk):
+        instance = self.get_object(request, pk=pk)
+        params = self.get_params(request)
+
+        if not request.data:
+            data = {
+                'message': 'Error parsing data',
+            }
+            return self.render(request, data,
+                               status=codes.unprocessable_entity)
+
+        if isinstance(request.data, dict):
+            array = [request.data]
+        else:
+            array = request.data
+
+        values = []
+        labels = []
+        array_map = {}
+
+        # Separate out the values and labels for the lookup. Track indexes
+        # maintain order of array
+        for i, datum in enumerate(array):
+            # Value takes precedence over label if supplied
+            if 'value' in datum:
+                array_map[i] = 'value'
+                values.append(datum['value'])
+            elif 'label' in datum:
+                array_map[i] = 'label'
+                labels.append(datum['label'])
+            else:
+                data = {
+                    'message': 'Error parsing value or lable'
+                }
+                return self.render(request, data,
+                                   status=codes.unprocessable_entity)
+
+        value_field_name = instance.field_name
+        label_field_names = instance.model.search_fields
+
+        # Note, this return a context-aware or naive queryset depending
+        # on params. Get the value and label fields so they can be filled
+        # in below.
+        queryset = self.get_base_values(request, instance, params)\
+            .values_list(value_field_name, *label_field_names)
+
+        lookup = Q()
+
+        # Validate based on the label
+        if labels:
+            for label_field in label_field_names:
+                lookup |= Q(**{'{0}__in'.format(label_field): labels})
+
+        if values:
+            lookup |= Q(**{'{0}__in'.format(value_field_name): values})
+
+        results = queryset.filter(lookup)
+
+        value_labels = {}
+        label_values = {}
+
+        for values in results:
+            value = values[0]
+            labels = values[1:]
+
+            for label in labels:
+                value_labels[value] = label
+                label_values[label] = value
+
+        for i, datum in enumerate(array):
+            if array_map[i] == 'label':
+                valid = datum['label'] in label_values
+                value = datum.get('value')
+
+                if not value:
+                    if valid:
+                        value = label_values[datum['label']]
+                    else:
+                        value = datum['label']
+
+                datum['valid'] = valid
+                datum['value'] = value
+            else:
+                valid = datum['value'] in value_labels
+                label = datum.get('label')
+
+                if not label:
+                    if valid:
+                        label = value_labels[datum['value']]
+                    else:
+                        label = smart_unicode(datum['value'])
+
+                datum['valid'] = valid
+                datum['label'] = label
+
+        usage.log('validate', instance=instance, request=request, data={
+            'count': len(array),
+        })
+
+        # Return the augmented data
+        return request.data
 
 
 class ItemResource(ItemBaseResource):
