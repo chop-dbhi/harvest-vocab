@@ -102,11 +102,17 @@ class ItemsResource(ItemBaseResource, FieldValues):
 
     def get_search_values(self, request, instance, params, item_pk=None):
         queryset = self.get_base_values(request, instance, params, item_pk)
+
+        if item_pk:
+            queryset = queryset.filter(parent__pk=item_pk)
+
         condition = Q()
+
         for field in instance.model.search_fields:
             condition = condition | Q(**{
                 '{0}__icontains'.format(field): params['query']
             })
+
         queryset = queryset.filter(condition)
         return self.prepare(request, queryset, instance.pk)
 
@@ -143,8 +149,10 @@ class ItemsResource(ItemBaseResource, FieldValues):
         page = paginator.page(page)
 
         kwargs = {'pk': pk}
+
         if item_pk:
             kwargs['item_pk'] = item_pk
+
         path = reverse('vocab:items', kwargs=kwargs)
         links = self.get_page_links(request, path, page, extra=params)
         links['parent'] = {
